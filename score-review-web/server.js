@@ -64,10 +64,14 @@ function serve(res, urlPath) {
     ? 'full-system/index.html'
     : normalizedPath
   const isFullSystem = requestedPath === 'full-system' || requestedPath.startsWith('full-system/')
-  if (isFullSystem) {
-    const relative = requestedPath.slice('full-system'.length).replace(/^\/+/, '') || 'index.html'
-    const file = path.resolve(FULL_SYSTEM_ROOT, relative)
-    if (!file.startsWith(FULL_SYSTEM_ROOT + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, { ok: false, message: '页面不存在' })
+  const isFullSystemAsset = requestedPath === 'assets' || requestedPath.startsWith('assets/')
+  if (isFullSystem || isFullSystemAsset) {
+    const relative = isFullSystem
+      ? requestedPath.slice('full-system'.length).replace(/^\/+/, '') || 'index.html'
+      : requestedPath.slice('assets'.length).replace(/^\/+/, '')
+    const root = isFullSystem ? FULL_SYSTEM_ROOT : path.join(FULL_SYSTEM_ROOT, 'assets')
+    const file = path.resolve(root, relative)
+    if (!file.startsWith(root + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, { ok: false, message: '页面不存在' })
     const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' }
     let data = fs.readFileSync(file)
     if (path.basename(file) === 'index.html' && process.env.SCORE_REVIEW_FULL_SYSTEM_API_BASE === 'same-origin') {
