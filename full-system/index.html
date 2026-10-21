@@ -2676,10 +2676,6 @@ function App() {
   return (
     <div className="admin-app min-w-[1280px] bg-white">
       <Header onHome={goHome} user={user} onLogout={logout} activeModule={view.page==='module'?view.module:'赛事管理'} />
-      <div className="bg-blue-50 px-4 py-2 flex justify-between items-center border-b border-blue-100">
-        <span className="text-blue-600 text-sm"><i className="fas fa-info-circle mr-2"></i>赛事数据已连接云端；赛事详情、封面和手机预览可实时联动</span>
-        <button onClick={downloadIntegrationGuide} className="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700">下载接口与项目合并说明</button>
-      </div>
       {view.page === 'module' && view.module === '商城管理' ? <StoreWorkspace ev={view.ev} /> : view.page === 'module' && view.module === '后台管理' ? <AdminMembers /> : view.page === 'module' ? (
         <div className="p-8">
           <div className="flex items-center gap-2 mb-2 text-gray-500">
