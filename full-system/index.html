@@ -14,6 +14,9 @@
 <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
 <style>
   html, body { margin: 0; padding: 0; background: #fff; }
+  /* Hide only the browser page scrollbar; wheel and trackpad scrolling remain enabled. */
+  html, body { scrollbar-width: none; -ms-overflow-style: none; }
+  html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; width: 0; height: 0; }
   body { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif; color: #303133; }
   /* 使用本地高清中文字体，避免远程字体加载和细字重造成文字发虚 */
   body { font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif; font-weight: 500; text-rendering: optimizeLegibility; -webkit-text-size-adjust: 100%; }
@@ -726,6 +729,7 @@ function Pagination({ page, setPage, size, setSize, total }) {
   const [open, setOpen] = useState(false);
   const ref = useRef();
   useClickOutside(ref, () => setOpen(false));
+  if (last <= 1) return null;
   const box = "w-[40px] h-[40px] rounded-[2px] flex items-center justify-center text-[16px] font-bold";
   return (
     <div className="flex justify-end items-center mt-[34px] gap-[14px] pr-[2px]">
