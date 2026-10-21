@@ -10,6 +10,7 @@ let eventsCollectionReady
 let publishedResultsCollectionReady
 let publishHistoryCollectionReady
 let permissionsCollectionsReady
+let eventDataCollectionReady
 
 const PERMISSION_STAGES = Array.from(STAGES)
 const ENTRY_PERMISSION_KEYS = ['startTime', 'endTime', 'penalty']
@@ -909,6 +910,75 @@ async function ensureCollection(db) {
   return collectionReady
 }
 
+async function ensureEventDataCollection(db) {
+  if (!eventDataCollectionReady) {
+    eventDataCollectionReady = (async () => {
+      try { await db.collection('event_management_data').limit(1).get() }
+      catch (error) {
+        if (!isMissingCollectionError(error)) throw error
+        try { await db.createCollection('event_management_data') }
+        catch { await db.collection('event_management_data').limit(1).get() }
+      }
+    })().catch(error => { eventDataCollectionReady = null; throw error })
+  }
+  return eventDataCollectionReady
+}
+
+function validateEventDataKey(value) {
+  const key = String(value || '').trim()
+  if (!key || key.length > 180 || !/^[\w:.-]+$/.test(key) || ['__proto__', 'prototype', 'constructor'].includes(key)) throw new Error('赛事数据键格式无效')
+  return key
+}
+
+function eventDataDocumentId(eventId, key) {
+  return `ed_${require('node:crypto').createHash('sha256').update(`${eventId}::${key}`).digest('hex').slice(0, 40)}`
+}
+
+async function listEventData(eventId) {
+  const id = validateEventId(eventId)
+  const db = getDatabase()
+  await ensureEventDataCollection(db)
+  const items = {}
+  for (let offset = 0; ; offset += 100) {
+    const page = await db.collection('event_management_data').where({ eventId: id }).skip(offset).limit(100).get()
+    const records = Array.isArray(page.data) ? page.data : []
+    for (const record of records) {
+      const key = validateEventDataKey(record.key)
+      if (Object.prototype.hasOwnProperty.call(items, key)) throw new Error(`赛事云端数据重复：${key}；请先清理重复记录`)
+      items[key] = { value: record.value, revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0, updatedAt: record.updatedAt || null }
+    }
+    if (records.length < 100) break
+  }
+  return { eventId: id, items }
+}
+
+async function putEventData(eventId, rawKey, value, expectedRevision) {
+  const id = validateEventId(eventId)
+  const key = validateEventDataKey(rawKey)
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error('赛事数据版本无效，请刷新后重试')
+  if (Buffer.byteLength(JSON.stringify(value), 'utf8') > 700 * 1024) throw new Error('单项赛事数据超过 CloudBase 安全大小，请拆分内容后重试')
+  const db = getDatabase()
+  await ensureEventDataCollection(db)
+  if (typeof db.runTransaction !== 'function') throw new Error('云数据库事务不可用，未写入赛事数据')
+  const _id = eventDataDocumentId(id, key)
+  const revision = expectedRevision + 1
+  await db.runTransaction(async transaction => {
+    const collection = transaction.collection('event_management_data')
+    let previous = null
+    try { const result = await collection.doc(_id).get(); previous = result && result.data || null }
+    catch (error) { if (!isMissingDocumentError(error)) throw error }
+    const actual = Number.isSafeInteger(Number(previous && previous.revision)) && Number(previous && previous.revision) >= 0 ? Number(previous.revision) : 0
+    if (actual !== expectedRevision) throw new Error(`赛事数据已在其他设备修改（云端版本 ${actual}，本地版本 ${expectedRevision}），本次未覆盖，请刷新后重试`)
+    const now = new Date()
+    const document = { eventId: id, key, value, revision, updatedAt: now }
+    if (previous) await collection.doc(_id).update(document)
+    else await collection.doc(_id).set({ ...document, createdAt: now })
+    const readback = await collection.doc(_id).get()
+    if (!readback || !readback.data || Number(readback.data.revision) !== revision || stableStringify(readback.data.value) !== stableStringify(value)) throw new Error('赛事数据云端回读核对失败，未确认保存成功')
+  })
+  return { eventId: id, key, revision, verified: true }
+}
+
 function validate(eventId, stage) {
   if (!STAGES.has(stage)) throw new Error('赛段无效')
   return { eventId: validateEventId(eventId), stage }
@@ -1349,6 +1419,8 @@ module.exports = {
   publishResults,
   listEvents,
   saveEvent,
+  listEventData,
+  putEventData,
   uploadEventCover,
   getEventCoverTempUrl,
   uploadEventAsset,

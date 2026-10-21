@@ -241,6 +241,37 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true, events })
       } catch (error) { return cloudError(res, error) }
     }
+    if (url.pathname === '/api/event-data' && req.method === 'GET') {
+      const rawEventId = url.searchParams.get('eventId')
+      if (!isValidEventId(rawEventId)) return send(res, 400, { ok: false, message: '赛事 ID 无效' })
+      try {
+        const eventId = validateEventId(rawEventId)
+        if (cloudStore.enabled) return send(res, 200, { ok: true, storage: 'cloudbase', ...await cloudStore.listEventData(eventId) })
+        const all = readData().eventManagementData || {}
+        return send(res, 200, { ok: true, storage: 'server-file', eventId, items: all[eventId] || {} })
+      } catch (error) { return cloudError(res, error) }
+    }
+    if (url.pathname === '/api/event-data' && req.method === 'PUT') {
+      try {
+        const input = await body(req)
+        if (!isValidEventId(input.eventId) || typeof input.key !== 'string' || !/^[\w:.-]{1,180}$/.test(input.key) || ['__proto__', 'prototype', 'constructor'].includes(input.key) || !Object.prototype.hasOwnProperty.call(input, 'value')) return send(res, 400, { ok: false, message: '赛事 ID、数据键或数据内容无效' })
+        if (Buffer.byteLength(JSON.stringify(input.value), 'utf8') > 700 * 1024) return send(res, 400, { ok: false, message: '单项赛事数据超过安全大小，请拆分后保存' })
+        const eventId = validateEventId(input.eventId)
+        if (cloudStore.enabled) return send(res, 200, { ok: true, storage: 'cloudbase', ...await cloudStore.putEventData(eventId, input.key, input.value, input.expectedRevision) })
+        if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) return send(res, 409, { ok: false, code: 'REVISION_REQUIRED', message: '赛事数据版本缺失，请刷新后重试' })
+        const data = readData(); data.eventManagementData ||= {}
+        const event = data.eventManagementData[eventId] ||= {}
+        const previous = event[input.key]
+        const actual = Number.isSafeInteger(Number(previous && previous.revision)) && Number(previous && previous.revision) >= 0 ? Number(previous.revision) : 0
+        if (actual !== input.expectedRevision) return send(res, 409, { ok: false, code: 'REVISION_CONFLICT', message: `赛事数据已被修改（版本 ${actual}），请刷新后重试` })
+        const revision = actual + 1
+        event[input.key] = { value: input.value, revision, updatedAt: new Date().toISOString() }
+        writeData(data)
+        const verified = readData().eventManagementData?.[eventId]?.[input.key]
+        if (!verified || verified.revision !== revision || JSON.stringify(verified.value) !== JSON.stringify(input.value)) return send(res, 500, { ok: false, message: '赛事数据本地回读核对失败' })
+        return send(res, 200, { ok: true, storage: 'server-file', eventId, key: input.key, revision, verified: true })
+      } catch (error) { return send(res, 400, { ok: false, message: error.message || '赛事数据保存失败' }) }
+    }
     if (url.pathname === '/api/events' && req.method === 'DELETE') {
       try {
         const input = await body(req)
