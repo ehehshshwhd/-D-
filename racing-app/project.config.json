@@ -1,0 +1,46 @@
+{
+  "description": "车动泰赛事小程序",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "file",
+        "value": "*.html"
+      },
+      {
+        "type": "file",
+        "value": "*.zip"
+      }
+    ]
+  },
+  "setting": {
+    "es6": true,
+    "minified": true,
+    "urlCheck": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "enhance": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "compileType": "miniprogram",
+  "cloudfunctionRoot": "cloudfunctions/",
+  "libVersion": "3.17.3",
+  "projectname": "racing-app",
+  "appid": "wx8f4c7e59ca593a15",
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
+}

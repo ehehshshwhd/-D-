@@ -1,0 +1,65 @@
+<view class="permission-page">
+  <view wx:if="{{checking}}" class="permission-state">正在校验管理员权限</view>
+  <block wx:elif="{{allowed}}">
+    <view class="permission-hero">
+      <view class="hero-kicker">CONTROL CENTER</view>
+      <view class="permission-title">权限管理</view>
+      <view class="permission-subtitle">按手机号分配角色和赛段，保存后工作人员下次登录立即生效。</view>
+      <view class="permission-summary">
+        <view class="summary-item"><text class="summary-number">{{activeStaffCount}}</text><text class="summary-label">启用工作人员</text></view>
+        <view class="summary-divider"></view>
+        <view class="summary-item"><text class="summary-number">{{activeAdminCount}}</text><text class="summary-label">启用管理员</text></view>
+        <view class="summary-divider"></view>
+        <view class="summary-item"><text class="summary-number">9</text><text class="summary-label">可用赛段</text></view>
+      </view>
+    </view>
+
+    <view class="permission-card permission-form">
+      <view class="card-heading"><view><view class="card-eyebrow">NEW ACCESS</view><view class="card-title">添加或更新账号</view></view></view>
+      <view class="field-caption">手机号</view>
+      <input class="permission-input" type="number" maxlength="15" value="{{phoneNumber}}" placeholder="输入工作人员手机号" bindinput="onPhoneInput" />
+      <view class="field-caption">备注名称 <text>选填</text></view>
+      <input class="permission-input" type="text" maxlength="30" value="{{label}}" placeholder="例如：赛道计时员" bindinput="onLabelInput" />
+      <view class="field-caption role-caption">账号角色</view>
+      <view class="role-picker">
+        <view class="role-option {{role == 'staff' ? 'role-selected' : ''}}" data-role="staff" bindtap="chooseRole"><text class="role-icon">工</text><view><view>工作人员</view><text>按赛段工作</text></view></view>
+        <view wx:if="{{isSuperAdmin}}" class="role-option {{role == 'admin' ? 'role-selected' : ''}}" data-role="admin" bindtap="chooseRole"><text class="role-icon">管</text><view><view>管理员</view><text>全部管理权限</text></view></view>
+      </view>
+      <view wx:if="{{role == 'staff'}}" class="stage-permission-box">
+        <view class="stage-permission-head"><view><view class="stage-permission-title">可见赛段</view><view class="stage-permission-subtitle">工作人员只会看到勾选的成绩表</view></view><view class="stage-tools"><text bindtap="selectAllStages">全选</text><text bindtap="clearStages">清空</text></view></view>
+        <checkbox-group bindchange="onStageChange" class="stage-choice-grid">
+          <label wx:for="{{stageChoices}}" wx:key="name" class="stage-option {{item.checked ? 'stage-option-checked' : ''}}"><checkbox value="{{item.name}}" checked="{{item.checked}}" color="#e87800" /><text>{{item.name}}</text></label>
+        </checkbox-group>
+        <view class="entry-permission-head"><view class="stage-permission-title">可录入项目</view><view class="stage-tools"><text bindtap="selectAllEntryPermissions">全选</text><text bindtap="clearEntryPermissions">清空</text></view></view>
+        <view class="entry-permission-subtitle">未勾选的项目在工作后台不能输入</view>
+        <checkbox-group bindchange="onEntryPermissionChange" class="entry-choice-grid">
+          <label wx:for="{{entryPermissionChoices}}" wx:key="name" class="entry-option {{item.checked ? 'entry-option-checked' : ''}}"><checkbox value="{{item.name}}" checked="{{item.checked}}" color="#e87800" /><text>{{item.label}}</text></label>
+        </checkbox-group>
+      </view>
+      <view wx:else class="admin-access-note"><text class="note-icon">✓</text><text>管理员默认拥有全部赛段和录入项目权限</text></view>
+      <button class="permission-add" bindtap="addPermission" loading="{{busy}}" disabled="{{busy}}">保存权限</button>
+    </view>
+
+    <view class="permission-card account-card">
+      <view class="account-toolbar"><view><view class="card-eyebrow">ACCESS LIST</view><view class="card-title">已配置账号</view></view><view class="account-total">{{admins.length + staff.length}} 个账号</view></view>
+      <input class="account-search" type="text" value="{{permissionQuery}}" placeholder="搜索手机号或备注" bindinput="onPermissionSearchInput" />
+      <view class="permission-filter"><view class="filter-option {{permissionFilter == 'staff' ? 'filter-active' : ''}}" data-filter="staff" bindtap="choosePermissionFilter">工作人员 <text>{{staff.length}}</text></view><view class="filter-option {{permissionFilter == 'admin' ? 'filter-active' : ''}}" data-filter="admin" bindtap="choosePermissionFilter">管理员 <text>{{admins.length}}</text></view></view>
+
+      <view wx:if="{{permissionFilter == 'staff'}}" class="account-list">
+        <view wx:if="{{staffRows.length === 0}}" class="permission-empty">{{permissionQuery ? '没有找到匹配的工作人员' : '还没有工作人员，请先添加账号'}}</view>
+        <view wx:for="{{staffRows}}" wx:key="id" class="account-item">
+          <view class="account-avatar">工</view><view class="account-main"><view class="account-phone">{{item.phoneNumber}}</view><view class="account-label">{{item.label || '工作人员'}} · {{item.stagePermissions.length}} 个赛段</view><view class="stage-chip-row"><text wx:for="{{item.stagePermissions}}" wx:key="*this" class="stage-chip">{{item}}</text></view><view class="entry-chip-row"><text wx:if="{{item.entryPermissions.startTime}}" class="entry-chip">发车</text><text wx:if="{{item.entryPermissions.endTime}}" class="entry-chip">收车</text><text wx:if="{{item.entryPermissions.penalty}}" class="entry-chip">罚时</text><text wx:if="{{!item.entryPermissions.startTime && !item.entryPermissions.endTime && !item.entryPermissions.penalty}}" class="entry-chip entry-chip-disabled">无录入权限</text></view></view>
+          <view class="account-actions"><view class="account-status {{item.enabled ? 'status-on' : 'status-off'}}" data-id="{{item.id}}" data-role="staff" data-enabled="{{item.enabled}}" bindtap="togglePermission"><text class="status-dot"></text>{{item.enabled ? '启用' : '停用'}}</view><text class="account-edit" data-id="{{item.id}}" bindtap="editPermission">编辑</text><text class="item-remove" data-id="{{item.id}}" data-role="staff" data-phone="{{item.phoneNumber}}" bindtap="removePermission">移除</text></view>
+        </view>
+      </view>
+      <view wx:else class="account-list">
+        <view wx:if="{{adminRows.length === 0}}" class="permission-empty">{{permissionQuery ? '没有找到匹配的管理员' : '还没有管理员账号'}}</view>
+        <view wx:for="{{adminRows}}" wx:key="id" class="account-item">
+          <view class="account-avatar admin-avatar">管</view><view class="account-main"><view class="account-phone">{{item.phoneNumber}}</view><view class="account-label">{{item.label || '管理员'}} · 全部权限</view><view class="stage-chip-row"><text class="stage-chip stage-chip-all">SS1—SS20 全部</text><text class="entry-chip entry-chip-all">发车·收车·罚时</text></view></view>
+          <view class="account-actions"><block wx:if="{{isSuperAdmin}}"><view wx:if="{{item.phoneNumber == '13729912574'}}" class="account-status status-on"><text class="status-dot"></text>固定</view><view wx:else class="account-status {{item.enabled ? 'status-on' : 'status-off'}}" data-id="{{item.id}}" data-role="admin" data-enabled="{{item.enabled}}" bindtap="togglePermission">{{item.enabled ? '启用' : '停用'}}</view><text wx:if="{{item.phoneNumber != '13729912574'}}" class="item-remove" data-id="{{item.id}}" data-role="admin" data-phone="{{item.phoneNumber}}" bindtap="removePermission">移除</text></block><text wx:else class="account-readonly">仅最高管理员可调整</text></view>
+        </view>
+      </view>
+    </view>
+  </block>
+  <view wx:else class="permission-state">当前账号没有权限</view>
+</view>

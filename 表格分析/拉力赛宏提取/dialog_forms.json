@@ -1,0 +1,784 @@
+[
+  {
+    "name": "赛事报名",
+    "id": "2",
+    "window": {
+      "visible": "true"
+    },
+    "controls": [
+      {
+        "type": "form",
+        "properties": {
+          "facade": {
+            "caption": "赛事报名",
+            "name": "赛事报名",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "border_style": "false",
+            "border_color": "4278190080",
+            "show_modal": "true",
+            "startup_position": "0"
+          },
+          "geometry": {
+            "left": "0",
+            "top": "0",
+            "width": "3689350",
+            "height": "2851150",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "layout": {
+            "layout_type": "1"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "commandbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "生成报名表",
+            "name": "CommandButton1",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true"
+          },
+          "geometry": {
+            "left": "1809750",
+            "top": "1651000",
+            "width": "1143000",
+            "height": "381000",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "0",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "赛事名称",
+            "name": "Label1",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "254000",
+            "top": "254000",
+            "width": "609600",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "1",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "textedit",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false",
+            "max_length": "32767"
+          },
+          "data": {},
+          "facade": {
+            "name": "TextEdit1",
+            "back_color": "4294967295",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216",
+            "text": "2026XX拉力赛",
+            "value": "2026XX拉力赛"
+          },
+          "geometry": {
+            "left": "914400",
+            "top": "254000",
+            "width": "2032000",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "2",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "赛事分组",
+            "name": "Label4",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "254000",
+            "top": "914400",
+            "width": "609600",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "-1",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "textedit",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false",
+            "max_length": "32767"
+          },
+          "data": {},
+          "facade": {
+            "name": "TextEdit4",
+            "back_color": "4294967295",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216",
+            "text": "四驱组,N4组,两驱组,1.6组,POLO杯,新人组,“王者归来”组,巾帼杯,四驱俱乐部杯,两驱俱乐部杯,厂商杯,飞车王",
+            "value": "四驱组,N4组,两驱组,1.6组,POLO杯,新人组,“王者归来”组,巾帼杯,四驱俱乐部杯,两驱俱乐部杯,厂商杯,飞车王"
+          },
+          "geometry": {
+            "left": "920750",
+            "top": "508000",
+            "width": "2032000",
+            "height": "1066800",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "4",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "optionbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "data": {},
+          "facade": {
+            "caption": "0.01",
+            "name": "OptionButton2",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "value": "false"
+          },
+          "geometry": {
+            "left": "5086350",
+            "top": "1104900",
+            "width": "552450",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "5",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "optionbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "data": {},
+          "facade": {
+            "caption": "0.01",
+            "name": "OptionButton3",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "value": "false"
+          },
+          "geometry": {
+            "left": "4489450",
+            "top": "1047750",
+            "width": "552450",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "6",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "本软件表格为东莞市炫影体育科技有限公司©版权所有",
+            "name": "Label3",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "279400",
+            "top": "2190750",
+            "width": "3054350",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "7",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "name": "赛段成绩",
+    "id": "3",
+    "window": {
+      "visible": "false"
+    },
+    "controls": [
+      {
+        "type": "form",
+        "properties": {
+          "facade": {
+            "caption": "赛段成绩",
+            "name": "赛段成绩",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "border_style": "false",
+            "border_color": "4278190080",
+            "show_modal": "true",
+            "startup_position": "0"
+          },
+          "geometry": {
+            "left": "-19050",
+            "top": "114300",
+            "width": "3454400",
+            "height": "2533650",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "layout": {
+            "layout_type": "1"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "optionbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "data": {},
+          "facade": {
+            "caption": "0.01",
+            "name": "OptionButton1",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "value": "false"
+          },
+          "geometry": {
+            "left": "863600",
+            "top": "533400",
+            "width": "508000",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "-1",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "optionbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "data": {},
+          "facade": {
+            "caption": "0.001",
+            "name": "OptionButton4",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "value": "false"
+          },
+          "geometry": {
+            "left": "1371600",
+            "top": "533400",
+            "width": "508000",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "-1",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "spinbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true"
+          },
+          "data": {},
+          "facade": {
+            "name": "SpinButton1",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "min_value": "1",
+            "max_value": "100",
+            "value": "10"
+          },
+          "geometry": {
+            "left": "863600",
+            "top": "228600",
+            "width": "304800",
+            "height": "203200",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "-1",
+            "tab_stop": "true"
+          },
+          "scroll": {
+            "small_change": "1"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "赛事赛段",
+            "name": "Label2",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "254000",
+            "top": "254000",
+            "width": "609600",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "-1",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "计时精度",
+            "name": "Label3",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "254000",
+            "top": "533400",
+            "width": "609600",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "4",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "commandbutton",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "生成各赛段和成绩表",
+            "name": "CommandButton1",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true"
+          },
+          "geometry": {
+            "left": "254000",
+            "top": "800100",
+            "width": "2032000",
+            "height": "381000",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "5",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "标记前缀",
+            "name": "Label4",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "1219200",
+            "top": "254000",
+            "width": "609600",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "6",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "textedit",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false",
+            "max_length": "32767"
+          },
+          "data": {},
+          "facade": {
+            "name": "TextEdit2",
+            "back_color": "4294967295",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216",
+            "text": "SS",
+            "value": "SS"
+          },
+          "geometry": {
+            "left": "1778000",
+            "top": "228600",
+            "width": "457200",
+            "height": "203200",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "7",
+            "tab_stop": "true"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      },
+      {
+        "type": "label",
+        "properties": {
+          "actions": {
+            "enabled": "true",
+            "text_align": "1",
+            "word_wrap": "true",
+            "auto_size": "false"
+          },
+          "facade": {
+            "caption": "本软件表格为东莞市炫影体育科技有限公司©版权所有",
+            "name": "Label5",
+            "back_color": "4292401368",
+            "fore_color": "4278190080",
+            "visible": "true",
+            "back_style": "true",
+            "border_style": "false",
+            "border_color": "-16777216"
+          },
+          "geometry": {
+            "left": "146050",
+            "top": "1422400",
+            "width": "3054350",
+            "height": "152400",
+            "width_policy": "1",
+            "height_policy": "1"
+          },
+          "others": {
+            "tab_index": "8",
+            "tab_stop": "false"
+          },
+          "font": {
+            "family": "宋体",
+            "pointsize": "10",
+            "weight": "50",
+            "italic": "false",
+            "underline": "false",
+            "strickout": "false"
+          }
+        }
+      }
+    ]
+  }
+]

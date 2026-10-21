@@ -1,0 +1,4 @@
+.tab-bar{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #eee;padding-bottom:env(safe-area-inset-bottom);z-index:80}.tab{flex:1;height:140rpx;text-align:center;padding-top:16rpx;box-sizing:border-box;color:#666;font-size:30rpx}.tab-icon{display:block;font-size:42rpx;height:56rpx;line-height:50rpx}.selected{color:#f39800}
+.tab{transition:color .12s ease,transform .12s ease,opacity .12s ease;will-change:transform}
+.pressing{transform:scale(.9);opacity:.58}
+.selected .tab-icon{font-weight:700}

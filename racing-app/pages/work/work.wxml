@@ -1,0 +1,111 @@
+<view class="admin-page">
+  <view wx:if="{{checking}}" class="admin-state">正在校验工作权限</view>
+  <block wx:elif="{{allowed}}">
+    <view class="work-head">
+      <view class="work-head-copy">
+        <view class="work-head-title">工作后台</view>
+        <view class="work-head-subtitle">赛事成绩录入</view>
+        <view class="keyboard-switch" bindtap="toggleKeyboardMode"><text class="keyboard-switch-label">{{keyboardMode == 'number' ? '数字键盘' : '英文键盘'}}</text><text class="keyboard-switch-action">切换</text></view>
+      </view>
+      <view class="car-quick-add">
+        <text class="car-quick-label">车号</text>
+        <input class="car-quick-input" focus="{{inputFocusKey == 'car'}}" data-focus-key="car" type="{{keyboardMode == 'number' ? 'number' : 'text'}}" maxlength="12" value="{{carInput}}" placeholder="输入车号" bindfocus="onInputFocus" bindinput="onCarNumberInput" confirm-type="done" />
+      </view>
+    </view>
+
+    <view class="stage-bar">
+      <scroll-view class="stage-scroll" scroll-x="true" show-scrollbar="false">
+        <view wx:for="{{stages}}" wx:key="*this" class="stage-tab stage-tab-box {{item == selectedStage ? 'stage-tab-active' : ''}}" data-stage="{{item}}" bindtap="selectStage">{{item}}</view>
+      </scroll-view>
+    </view>
+
+    <view class="roster-panel">
+      <view class="cloud-sync-status {{cloudSyncRetryVisible ? 'cloud-sync-error' : ''}}">
+        <text>{{cloudSyncMessage}}</text>
+        <button wx:if="{{cloudSyncRetryVisible}}" size="mini" bindtap="retryCloudSync">重试</button>
+      </view>
+      <view class="roster-head">
+        <view class="roster-head-title">
+          <view class="roster-title">成绩表</view>
+          <text class="roster-count">共 {{carRows.length}} 条</text>
+        </view>
+        <view class="roster-head-actions">
+          <button class="upload-record-button" size="mini" loading="{{uploading}}" disabled="{{uploading}}" bindtap="uploadAllRecords">{{uploading ? '上传中' : '上传'}}</button>
+          <input class="roster-search-input" focus="{{inputFocusKey == 'search'}}" data-focus-key="search" type="{{keyboardMode == 'number' ? 'number' : 'text'}}" maxlength="12" value="{{rosterQuery}}" placeholder="按车号搜索" bindfocus="onInputFocus" bindinput="onRosterSearchInput" confirm-type="search" />
+        </view>
+      </view>
+      <block>
+        <view wx:if="{{carRows.length === 0}}" class="roster-empty">还没有车号，请在上方输入后加入</view>
+        <block wx:else>
+          <view class="roster-table-head roster-single-row"><text class="roster-car-cell">车号</text><text>发车时间</text><text>收车时间</text><text>罚时</text><text>赛段用时</text></view>
+          <scroll-view style="height:{{rosterViewportHeight}}rpx" scroll-y="{{filteredCount > 6}}" class="roster-scroll {{filteredCount <= 6 ? 'roster-scroll-compact' : ''}}" scroll-top="{{rosterScrollTop}}" enhanced="true" bounces="false" lower-threshold="160" bindscroll="onRosterScroll" bindtap="clearRosterSelection">
+            <view wx:if="{{filteredCount === 0}}" class="roster-empty roster-search-empty" bindtap="clearRosterSelection">没有匹配的车号</view>
+            <view wx:else style="height:{{rosterTopSpacer}}rpx" bindtap="clearRosterSelection"></view>
+            <view class="roster-swipe-row {{item.swiped ? 'swiped' : ''}}" wx:for="{{visibleCarRows}}" wx:key="id" data-id="{{item.id}}" bindtouchstart="onRowTouchStart" bindtouchmove="onRowTouchMove" bindtouchend="onRowTouchEnd" catchtap="selectCar">
+              <view class="roster-row {{item.id == currentCarId ? 'roster-row-active' : ''}} {{item.id == rosterFocusId ? 'roster-row-focus' : ''}}">
+                <text class="roster-car-number roster-car-cell">{{item.carNumber}}</text>
+                <text class="roster-time-cell">{{item.displayStartTime || '—'}}</text>
+                <text class="roster-time-cell">{{item.displayEndTime || '—'}}</text>
+                <text class="roster-time-cell roster-penalty">{{item.penaltyTotal && item.penaltyTotal !== '0' ? item.penaltyTotal : '—'}}</text>
+                <text class="roster-time-cell roster-total">{{item.displaySegmentDuration && item.displaySegmentDuration !== '待输入' ? item.displaySegmentDuration : '—'}}</text>
+              </view>
+              <view class="roster-swipe-delete" data-id="{{item.id}}" catchtap="removeCar" aria-label="清除车号">×</view>
+            </view>
+          </scroll-view>
+        </block>
+      </block>
+    </view>
+
+    <view class="entry-panel">
+      <view class="entry-panel-head">
+        <view>
+          <view wx:if="{{currentCarId}}" class="entry-title">记录表 · 车号 {{currentCarNumber}}</view>
+          <view wx:else class="entry-title">记录表</view>
+        </view>
+      </view>
+
+      <view class="time-grid">
+        <view class="entry-field">
+          <text class="field-label">发车时间</text>
+          <view class="entry-input-wrap {{!canEditStartTime ? 'entry-input-locked' : ''}}" bindtap="onStartFieldTap">
+            <input class="number-input" focus="{{inputFocusKey == 'start'}}" data-focus-key="start" type="{{keyboardMode == 'number' ? 'digit' : 'text'}}" maxlength="12" cursor="{{startCursor}}" value="{{startTime}}" placeholder="{{canEditStartTime ? '输入发车时间' : '暂无录入权限'}}" disabled="{{!canEditStartTime}}" bindfocus="onInputFocus" bindinput="onStartInput" bindblur="onStartBlur" />
+          </view>
+        </view>
+        <view class="entry-field">
+          <text class="field-label">收车时间</text>
+          <view class="entry-input-wrap {{!canEditEndTime ? 'entry-input-locked' : ''}}" bindtap="onEndFieldTap">
+            <input class="number-input" focus="{{inputFocusKey == 'end'}}" data-focus-key="end" type="{{keyboardMode == 'number' ? 'digit' : 'text'}}" maxlength="12" cursor="{{endCursor}}" value="{{endTime}}" placeholder="{{canEditEndTime ? '输入收车时间' : '暂无录入权限'}}" disabled="{{!canEditEndTime}}" bindfocus="onInputFocus" bindinput="onEndInput" bindblur="onEndBlur" />
+          </view>
+        </view>
+      </view>
+
+      <view class="penalty-heading">
+        <view>
+          <view class="penalty-title">罚时（秒）</view>
+          <view class="penalty-count">{{penaltyInputs.length}} / {{maxPenaltyInputs}} 项</view>
+        </view>
+        <view class="add-penalty-wrap" bindtap="onPenaltyFieldTap"><button class="add-penalty" size="mini" bindtap="addPenalty">添加罚时</button></view>
+      </view>
+
+      <view class="penalty-list">
+        <view class="penalty-row" wx:for="{{penaltyInputs}}" wx:key="id">
+          <text class="penalty-index">罚时{{index + 1}}</text>
+          <view class="entry-input-wrap penalty-input-wrap {{!canEditPenalty ? 'entry-input-locked' : ''}}" bindtap="onPenaltyFieldTap">
+            <input class="number-input penalty-input" focus="{{inputFocusKey == 'penalty' && focusedPenaltyIndex == index}}" data-focus-key="penalty" type="number" maxlength="9" cursor="{{penaltyCursors[index]}}" value="{{item.value}}" placeholder="{{canEditPenalty ? '输入罚时（秒）' : '暂无录入权限'}}" disabled="{{!canEditPenalty}}" data-index="{{index}}" bindfocus="onInputFocus" bindinput="onPenaltyInput" bindblur="onPenaltyBlur" />
+          </view>
+          <button wx:if="{{penaltyInputs.length > 1}}" class="remove-penalty" size="mini" disabled="{{!canEditPenalty}}" data-index="{{index}}" bindtap="removePenalty" aria-label="删除罚时">×</button>
+        </view>
+      </view>
+
+      <button wx:if="{{currentCarId}}" class="save-record-button" bindtap="saveCarEdit">保存修改</button>
+      <button wx:else class="save-record-button" bindtap="addCar">添加</button>
+
+      <view class="result-panel">
+        <view class="result-line"><text>赛段用时</text><text class="result-value">{{segmentDuration}}</text></view>
+        <view class="result-line"><text>罚时合计（秒）</text><text class="result-value">{{penaltyTotal}}</text></view>
+        <view class="result-line result-total"><text>最终用时</text><text class="result-value">{{totalDuration}}</text></view>
+      </view>
+    </view>
+  </block>
+  <view wx:else class="admin-state">当前账号没有工作权限</view>
+</view>

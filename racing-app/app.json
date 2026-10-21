@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/events/events",
+    "pages/products/products",
+    "pages/messages/messages",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/admin/admin",
+    "pages/permissions/permissions",
+    "pages/work/work",
+    "pages/score-review/score-review"
+  ],
+  "window": {
+    "navigationBarTitleText": "车动泰",
+    "navigationBarBackgroundColor": "#ff9d00",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f6f7"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "tabBar": {
+    "custom": true,
+    "color": "#666",
+    "selectedColor": "#f39800",
+    "backgroundColor": "#fff",
+    "list": [
+      {
+        "pagePath": "pages/events/events",
+        "text": "赛事"
+      },
+      {
+        "pagePath": "pages/messages/messages",
+        "text": "工具"
+      },
+      {
+        "pagePath": "pages/products/products",
+        "text": "商城"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  },
+  "subpackages": [
+    {
+      "root": "subpackages/events",
+      "pages": [
+        "detail/detail"
+      ]
+    }
+  ]
+}

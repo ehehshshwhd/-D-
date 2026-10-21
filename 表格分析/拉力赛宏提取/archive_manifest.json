@@ -1,0 +1,144 @@
+{
+  "source_xlsm": "D:\\wwwwxxxxxx\\xwechat_files\\wxid_e76zrb4b7loq22_484c\\temp\\RWTemp\\2026-09\\7ae4fe779cb338d691b5b320b813c873\\拉力赛成绩统计表2026.3.16_2.xlsm",
+  "source_xlsm_sha256": "dbbd28d61a813d16db84172087d3a40d99ef4de01c6b186d37e19d44895bed44",
+  "has_vbaProjectBin": false,
+  "has_JDEData": true,
+  "entries": [
+    {
+      "name": "[Content_Types].xml",
+      "size": 1990
+    },
+    {
+      "name": "_rels/",
+      "size": 0
+    },
+    {
+      "name": "_rels/.rels",
+      "size": 735
+    },
+    {
+      "name": "docProps/",
+      "size": 0
+    },
+    {
+      "name": "docProps/app.xml",
+      "size": 567
+    },
+    {
+      "name": "docProps/core.xml",
+      "size": 612
+    },
+    {
+      "name": "docProps/custom.xml",
+      "size": 526
+    },
+    {
+      "name": "xl/",
+      "size": 0
+    },
+    {
+      "name": "xl/_rels/",
+      "size": 0
+    },
+    {
+      "name": "xl/_rels/workbook.xml.rels",
+      "size": 802
+    },
+    {
+      "name": "xl/drawings/",
+      "size": 0
+    },
+    {
+      "name": "xl/drawings/_rels/",
+      "size": 0
+    },
+    {
+      "name": "xl/drawings/_rels/drawing1.xml.rels",
+      "size": 1217
+    },
+    {
+      "name": "xl/drawings/drawing1.xml",
+      "size": 3799
+    },
+    {
+      "name": "xl/jdecontrols/",
+      "size": 0
+    },
+    {
+      "name": "xl/jdecontrols/jdecontrol1.xml",
+      "size": 1247
+    },
+    {
+      "name": "xl/jdecontrols/jdecontrol2.xml",
+      "size": 1248
+    },
+    {
+      "name": "xl/jdecontrols/jdecontrol3.xml",
+      "size": 1413
+    },
+    {
+      "name": "xl/jdecontrols/jdecontrol4.xml",
+      "size": 1242
+    },
+    {
+      "name": "xl/JDEData.bin",
+      "size": 61131
+    },
+    {
+      "name": "xl/media/",
+      "size": 0
+    },
+    {
+      "name": "xl/media/image1.png",
+      "size": 3595
+    },
+    {
+      "name": "xl/media/image2.png",
+      "size": 3196
+    },
+    {
+      "name": "xl/media/image3.png",
+      "size": 7197
+    },
+    {
+      "name": "xl/media/image4.png",
+      "size": 3054
+    },
+    {
+      "name": "xl/sharedStrings.xml",
+      "size": 589
+    },
+    {
+      "name": "xl/styles.xml",
+      "size": 23728
+    },
+    {
+      "name": "xl/theme/",
+      "size": 0
+    },
+    {
+      "name": "xl/theme/theme1.xml",
+      "size": 6334
+    },
+    {
+      "name": "xl/workbook.xml",
+      "size": 496
+    },
+    {
+      "name": "xl/worksheets/",
+      "size": 0
+    },
+    {
+      "name": "xl/worksheets/_rels/",
+      "size": 0
+    },
+    {
+      "name": "xl/worksheets/_rels/sheet1.xml.rels",
+      "size": 299
+    },
+    {
+      "name": "xl/worksheets/sheet1.xml",
+      "size": 1134
+    }
+  ]
+}

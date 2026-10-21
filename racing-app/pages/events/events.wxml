@@ -1,0 +1,12 @@
+<view class="events-page"><scroll-view class="events-scroll" scroll-y>
+<view wx:for="{{events}}" wx:key="id" class="event-card" data-id="{{item.id}}" bindtap="openEvent">
+ <image wx:if="{{item.coverUrl}}" class="event-poster" src="{{item.coverUrl}}" mode="widthFix" />
+ <view wx:if="{{!item.coverUrl && item.kind==='hero'}}" class="hero-poster"><view class="hero-kicker">大别山</view><view class="hero-name">越野英雄会</view><view class="hero-place">2026 中国·信阳</view><view class="hero-mark">赛事<br/>视觉</view></view>
+ <image wx:if="{{!item.coverUrl && item.kind==='event2'}}" class="event-poster" src="/assets/events/event2-poster-crop.jpg" mode="widthFix" />
+ <view wx:if="{{!item.coverUrl && item.kind==='event3'}}" class="event3-poster"><view class="event3-kicker">林西·沐沦湖</view><view class="event3-name">第三届大河英雄会</view><view class="event3-place">2026 中国·赤峰</view><view class="event3-badge">赛事<br/>视觉</view></view>
+ <view class="event-body"><view class="event-title">{{item.title}}</view><view class="event-line"><text class="line-icon">◷</text><text>{{item.date}}</text><text class="event-status">{{item.status}}</text></view><view class="event-line"><text class="line-icon">♧</text><text>{{item.location}}</text></view><view wx:if="{{item.notice}}" class="event-notice">♧ {{item.notice}}</view></view>
+</view>
+</scroll-view></view>
+
+
+

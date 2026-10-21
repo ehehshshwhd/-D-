@@ -1,0 +1,140 @@
+.admin-page{min-height:100vh;box-sizing:border-box;padding:28rpx 30rpx 80rpx;background:#f5f6f7;color:#202124}.work-head{padding:12rpx 0 30rpx}.work-head-title{font-size:42rpx;font-weight:700;line-height:1.3}.work-head-subtitle{margin-top:8rpx;color:#74777c;font-size:26rpx}.stage-bar{display:flex;margin-bottom:20rpx;border-bottom:1rpx solid #e1e3e6}.stage-tab{position:relative;padding:20rpx 18rpx;color:#777b81;font-size:30rpx}.stage-tab-active{color:#e87800;font-weight:700}.stage-tab-active:after{position:absolute;right:18rpx;bottom:0;left:18rpx;height:5rpx;background:#e87800;content:''}.entry-panel{padding:30rpx;background:#fff;border:1rpx solid #e4e6e8;border-radius:12rpx;box-shadow:0 6rpx 20rpx rgba(22,27,29,.04)}.entry-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18rpx}.entry-title{font-size:34rpx;font-weight:700}.entry-description{margin-top:10rpx;color:#7c8086;font-size:24rpx;line-height:1.5}.car-number-field{flex:none;width:190rpx;padding:12rpx 12rpx 14rpx;border:5rpx solid #d83232;border-radius:10rpx;background:#fff5f5}.car-number-label{display:block;color:#b42323;font-size:23rpx;text-align:center}.car-number-input{box-sizing:border-box;width:100%;height:58rpx;margin-top:4rpx;padding:0 4rpx;color:#a71919;font-size:34rpx;font-weight:700;line-height:58rpx;text-align:center}.time-grid{display:flex;gap:20rpx;margin-top:30rpx}.entry-field{flex:1;min-width:0}.field-label{display:block;margin-bottom:14rpx;color:#43464a;font-size:28rpx}.number-input{box-sizing:border-box;width:100%;height:82rpx;padding:0 20rpx;border:2rpx solid #cfd3d8;border-radius:8rpx;background:#fff;color:#202124;font-size:30rpx;line-height:82rpx}.number-input:focus{border-color:#e87800}.penalty-heading{display:flex;align-items:center;justify-content:space-between;margin-top:38rpx}.penalty-title{font-size:30rpx;font-weight:700}.penalty-count{margin-top:6rpx;color:#85898f;font-size:23rpx}.add-penalty,.remove-penalty,.preview-edit{display:flex;align-items:center;justify-content:center;margin:0;border:0!important;line-height:1}.add-penalty{box-sizing:border-box;width:180rpx;height:62rpx;padding:0 10rpx;border-radius:8rpx!important;background:#e87800!important;color:#fff!important;font-size:26rpx;white-space:nowrap}.add-penalty:after,.remove-penalty:after,.preview-edit:after{border:0}.penalty-list{margin-top:20rpx}.penalty-row{display:flex;align-items:center;margin-top:16rpx}.penalty-row:first-child{margin-top:0}.penalty-index{width:110rpx;flex:none;color:#555960;font-size:27rpx}.penalty-input{flex:1}.remove-penalty{width:62rpx;height:62rpx;margin-left:16rpx;border-radius:8rpx!important;background:#f0f1f2!important;color:#666b71!important;font-size:40rpx;font-weight:300}.result-panel{margin-top:30rpx;padding-top:22rpx;border-top:1rpx solid #eceef0}.result-line{display:flex;align-items:center;justify-content:space-between;padding:11rpx 0;color:#656a70;font-size:27rpx}.result-value{color:#25282c;font-size:29rpx;font-weight:600}.result-total{margin-top:8rpx;padding-top:18rpx;border-top:1rpx solid #eceef0;color:#b25b00;font-size:30rpx}.result-total .result-value{color:#d86d00;font-size:34rpx}.preview-panel{margin-top:24rpx;padding:28rpx 0 24rpx;background:#fff;border:1rpx solid #e4e6e8;border-radius:12rpx;box-shadow:0 6rpx 20rpx rgba(22,27,29,.04)}.preview-head{display:flex;align-items:center;justify-content:space-between;padding:0 28rpx 22rpx}.preview-title{font-size:32rpx;font-weight:700}.preview-subtitle{margin-top:8rpx;color:#85898f;font-size:23rpx}.preview-edit{width:110rpx;height:58rpx;border:1rpx solid #e87800!important;border-radius:8rpx!important;background:#fff!important;color:#d86d00!important;font-size:25rpx}.preview-scroll{width:100%;white-space:nowrap}.preview-table{min-width:1120rpx}.preview-row{display:flex;align-items:center;min-height:84rpx;border-top:1rpx solid #eceef0}.preview-row text,.preview-row input{box-sizing:border-box;width:180rpx;padding:0 14rpx;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.preview-row text:first-child,.preview-row input:first-child{width:130rpx}.preview-row-head{min-height:64rpx;background:#fafafa;color:#73777c;font-size:23rpx}.preview-row-head text{font-size:23rpx}.preview-cell{color:#303338;font-size:24rpx}.preview-total{color:#d86d00;font-weight:700}.preview-input{height:58rpx;margin:0 6rpx;border:1rpx solid #d3d6da;border-radius:6rpx;color:#202124;font-size:23rpx;line-height:58rpx}.admin-state{padding-top:260rpx;text-align:center;color:#888;font-size:29rpx}
+.work-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20rpx}.work-head-copy{flex:1;min-width:0}.car-quick-add{box-sizing:border-box;flex:none;width:300rpx;padding:14rpx 14rpx 12rpx;border:5rpx solid #d83232;border-radius:10rpx;background:#fff5f5}.car-quick-label{display:block;color:#b42323;font-size:24rpx;text-align:center}.car-quick-input{box-sizing:border-box;width:100%;height:58rpx;margin-top:4rpx;padding:0 6rpx;color:#a71919;font-size:30rpx;line-height:58rpx;text-align:center}.roster-panel{margin-bottom:24rpx;padding:28rpx 0 0;background:#fff;border:1rpx solid #e4e6e8;border-radius:12rpx;box-shadow:0 6rpx 20rpx rgba(22,27,29,.04);overflow:hidden}.roster-head{display:flex;align-items:center;justify-content:space-between;padding:0 28rpx 22rpx}.roster-title{font-size:32rpx;font-weight:700}.roster-subtitle{margin-top:8rpx;color:#85898f;font-size:23rpx}.roster-count{min-width:94rpx;color:#d83232;font-size:38rpx;font-weight:700;text-align:right}.roster-count-total{color:#9b9fa5;font-size:22rpx;font-weight:400}.roster-empty{padding:52rpx 28rpx;color:#92969b;font-size:26rpx;text-align:center;background:#fafafa}.roster-table-head,.roster-row{display:flex;align-items:center;width:100%;box-sizing:border-box}.roster-table-head{min-height:64rpx;padding:0 8rpx;background:#fafafa;border-top:1rpx solid #eceef0;border-bottom:1rpx solid #eceef0;color:#777b81;font-size:20rpx}.roster-row{min-height:82rpx;padding:0 6rpx;border-bottom:1rpx solid #eceef0;color:#34373b;font-size:20rpx}.roster-row-active{background:#fff5e8;box-shadow:inset 6rpx 0 #d86d00}.roster-table-head>text,.roster-row>text{box-sizing:border-box;flex:none;width:17.6%;padding:0 1rpx;overflow:hidden;text-overflow:clip;white-space:nowrap;text-align:center}.roster-car-cell{width:12%!important;text-align:left!important}.roster-time-cell{width:17.6%!important;font-size:20rpx;letter-spacing:-.5rpx}.roster-car-number{color:#b42323;font-size:28rpx;font-weight:700}.roster-total{color:#d86d00;font-weight:700}.roster-action-cell{display:flex;align-items:center;justify-content:space-between;width:180rpx!important;padding:0 10rpx}.roster-edit-label{color:#d86d00;font-size:23rpx}.roster-delete{display:flex;align-items:center;justify-content:center;width:52rpx;height:52rpx;margin:0;border:0!important;border-radius:6rpx!important;background:#f4f5f6!important;color:#777b81!important;font-size:34rpx;line-height:1}.roster-delete:after{border:0}.roster-scroll{height:460rpx}.empty-entry{margin-bottom:24rpx;padding:70rpx 28rpx;background:#fff;border:1rpx solid #e4e6e8;border-radius:12rpx;color:#92969b;font-size:27rpx;text-align:center}
+.save-record-button{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:78rpx;margin:28rpx 0 4rpx;padding:0 0 4rpx;border:0!important;border-radius:8rpx!important;background:#d83232!important;color:#fff!important;font-size:29rpx;line-height:1}.save-record-button:after{border:0}.save-record-button[disabled]{background:#e8b1b1!important;color:#fff!important;opacity:1}
+.roster-penalty{color:#b86b00}
+.roster-swipe-row{position:relative;width:100%;height:82rpx;overflow:hidden;background:#fff}.roster-swipe-row .roster-row{position:relative;z-index:1;background:#fff;transition:transform .18s ease}.roster-swipe-row.swiped .roster-row{transform:translateX(-96rpx)}.roster-swipe-delete{position:absolute;z-index:0;top:0;right:0;display:flex;align-items:center;justify-content:center;width:96rpx;height:82rpx;background:#d83232;color:#fff;font-size:42rpx;line-height:82rpx;text-align:center}
+.roster-scroll{contain:strict;will-change:scroll-position}/* 成绩表采用三列两行布局，保证手机屏幕完整显示 */
+.roster-table-head.roster-grid{display:grid;grid-template-columns:repeat(3,1fr);width:100%;min-height:68rpx;padding:0 10rpx;align-items:center;text-align:center;font-size:22rpx}
+.roster-table-head.roster-grid>text{width:auto;padding:0;text-align:center}
+.roster-swipe-row{height:154rpx}
+.roster-swipe-row .roster-row{display:block;width:100%;height:154rpx;min-height:154rpx;padding:0 10rpx;box-sizing:border-box}
+.roster-grid{display:grid;grid-template-columns:repeat(3,1fr);width:100%;box-sizing:border-box;text-align:center}
+.roster-grid-primary{height:70rpx;align-items:center;border-bottom:1rpx solid #f0f1f2;font-size:23rpx}
+.roster-grid-primary>text{display:block;width:auto;padding:0;overflow:hidden;text-overflow:clip;white-space:nowrap}
+.roster-grid-primary .roster-car-number{font-size:29rpx;text-align:center}
+.roster-grid-secondary{height:82rpx;align-items:center;font-size:21rpx}
+.roster-grid-two{grid-template-columns:repeat(2,1fr)}
+.roster-grid-secondary>view{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;line-height:1.25}
+.roster-cell-label{margin-bottom:4rpx;color:#85898f;font-size:18rpx}
+.roster-grid-secondary>view>text:last-child{max-width:100%;overflow:hidden;text-overflow:clip;white-space:nowrap;letter-spacing:-.3rpx}
+.roster-swipe-row.swiped .roster-row{transform:translateX(-96rpx)}
+.roster-swipe-delete{height:154rpx;line-height:154rpx}
+.roster-table-head.roster-single-row{display:flex;align-items:center;width:100%;min-height:66rpx;padding:0 4rpx;box-sizing:border-box;font-size:20rpx}
+.roster-table-head.roster-single-row>text,.roster-row>text{box-sizing:border-box;flex:none;width:21%;padding:0 1rpx;overflow:hidden;text-overflow:clip;white-space:nowrap;text-align:center}
+.roster-table-head.roster-single-row>.roster-car-cell,.roster-row>.roster-car-cell{width:16%;text-align:center}
+.roster-swipe-row{height:82rpx}
+.roster-swipe-row .roster-row{display:flex;align-items:center;width:100%;height:82rpx;min-height:82rpx;padding:0 4rpx;box-sizing:border-box}
+.roster-row>text{font-size:19rpx}
+.roster-row>.roster-time-cell{font-size:19rpx;letter-spacing:-.8rpx}
+.roster-row>.roster-car-number{font-size:25rpx}
+.roster-swipe-delete{height:82rpx;line-height:82rpx}
+.roster-table-head.roster-single-row>text,.roster-row>text{width:21.75%;padding:0;overflow:hidden;text-overflow:clip;white-space:nowrap;text-align:center!important}
+.roster-table-head.roster-single-row>.roster-car-cell,.roster-row>.roster-car-cell{width:13%;text-align:center!important}
+.roster-table-head.roster-single-row>text{font-size:24rpx;font-weight:600}
+.roster-row>text{font-size:22rpx;line-height:1;letter-spacing:-1.1rpx}
+.roster-row>.roster-car-number{font-size:28rpx;letter-spacing:0}
+.roster-row>.roster-time-cell{font-size:22rpx;letter-spacing:-1.1rpx}
+.roster-table-head.roster-single-row>text:nth-child(1),.roster-row>text:nth-child(1){width:14%!important}
+.roster-table-head.roster-single-row>text:nth-child(2),.roster-row>text:nth-child(2){width:22%!important}
+.roster-table-head.roster-single-row>text:nth-child(3),.roster-row>text:nth-child(3){width:22%!important}
+.roster-table-head.roster-single-row>text:nth-child(4),.roster-row>text:nth-child(4){width:18%!important}
+.roster-table-head.roster-single-row>text:nth-child(5),.roster-row>text:nth-child(5){width:24%!important}
+.roster-table-head.roster-single-row>text{font-size:25rpx;letter-spacing:-.4rpx}
+.roster-table-head.roster-single-row>text{height:66rpx;line-height:66rpx}
+.roster-row>text{display:block;height:82rpx;font-size:24rpx;line-height:82rpx;vertical-align:middle}
+.roster-row>.roster-time-cell{font-size:24rpx;letter-spacing:-1.2rpx}
+.roster-title{font-size:calc(32rpx + 4px)}
+.roster-empty{font-size:calc(26rpx + 4px)}
+.roster-table-head.roster-single-row>text{font-size:calc(25rpx + 4px)}
+.roster-row>text{font-size:calc(24rpx + 4px)}
+.roster-row>.roster-time-cell{font-size:calc(24rpx + 4px)}
+.roster-row>.roster-car-number{font-size:calc(28rpx + 4px)}
+
+/* 时间列保持清晰间距；显示层去除无意义的毫秒尾零后再分配宽度 */
+.roster-table-head.roster-single-row>text:nth-child(1),.roster-row>text:nth-child(1){width:12%!important}
+.roster-table-head.roster-single-row>text:nth-child(2),.roster-row>text:nth-child(2){width:26%!important}
+.roster-table-head.roster-single-row>text:nth-child(3),.roster-row>text:nth-child(3){width:26%!important}
+.roster-table-head.roster-single-row>text:nth-child(4),.roster-row>text:nth-child(4){width:12%!important}
+.roster-table-head.roster-single-row>text:nth-child(5),.roster-row>text:nth-child(5){width:24%!important}
+.roster-row>.roster-time-cell{box-sizing:border-box;padding:0 3rpx;font-family:monospace;font-variant-numeric:tabular-nums;letter-spacing:-.8rpx;font-size:28rpx}
+.roster-row>.roster-car-number{color:#b51f28;font-weight:800}
+.roster-row>.roster-time-cell:not(.roster-penalty):not(.roster-total){color:#000;font-weight:800}
+.roster-row>.roster-time-cell:not(.roster-penalty):not(.roster-total){font-size:28rpx}
+.roster-row>text:nth-child(2){transform:translateX(-6rpx)}
+.roster-row>text:nth-child(3){transform:translateX(6rpx)}
+.roster-row>.roster-penalty{color:#bd6900;font-weight:700}
+.roster-row>.roster-total{color:#d66b00;font-weight:800}
+
+/* 成绩表五列按完整时间内容重新分配，赛段用时与发车、收车字号一致 */
+.roster-table-head.roster-single-row>text:nth-child(1),.roster-row>text:nth-child(1){width:10%!important}
+.roster-table-head.roster-single-row>text:nth-child(2),.roster-row>text:nth-child(2){width:24%!important}
+.roster-table-head.roster-single-row>text:nth-child(3),.roster-row>text:nth-child(3){width:24%!important}
+.roster-table-head.roster-single-row>text:nth-child(4),.roster-row>text:nth-child(4){width:18%!important}
+.roster-table-head.roster-single-row>text:nth-child(5),.roster-row>text:nth-child(5){width:24%!important}
+.roster-row>text:nth-child(2),.roster-row>text:nth-child(3){font-family:inherit;font-size:calc(30rpx + 3px);font-weight:800;letter-spacing:-1.6rpx;transform:scaleX(.92);transform-origin:center}
+.roster-row>text:nth-child(5){font-family:inherit;font-size:calc(30rpx + 3px);font-weight:800;letter-spacing:-1.6rpx;transform:scaleX(.84);transform-origin:center}
+
+/* 工作后台文字统一按成绩表的可读字号设置 */
+.work-head-subtitle{font-size:28rpx}
+.stage-tab{font-size:32rpx}
+.entry-title{font-size:36rpx}
+.entry-description{font-size:28rpx}
+.car-quick-label,.car-number-label{font-size:28rpx}
+.car-quick-input,.car-number-input{font-size:36rpx}
+.field-label{font-size:30rpx}
+.number-input{font-size:32rpx}
+.penalty-title{font-size:32rpx}
+.penalty-count{font-size:28rpx}
+.add-penalty{font-size:28rpx}
+.penalty-index{font-size:29rpx}
+.remove-penalty{font-size:42rpx}
+.result-line{font-size:29rpx}
+.result-value{font-size:31rpx}
+.result-total{font-size:32rpx}
+.result-total .result-value{font-size:36rpx}
+.save-record-button{font-size:31rpx}
+.admin-state{font-size:31rpx}
+.stage-tab-box{box-sizing:border-box;margin:0 8rpx 10rpx;padding:12rpx 28rpx;border:2rpx solid #d9dde1;border-radius:10rpx;background:#fff;color:#777b81}
+.stage-tab-box.stage-tab-active{position:relative;z-index:2;border:4rpx solid #c45d00;background:#e87800;color:#fff;font-weight:700;box-shadow:0 7rpx 0 #b85100,0 12rpx 20rpx rgba(180,81,0,.35);transform:translateY(-5rpx)}
+.stage-scroll{width:100%;white-space:nowrap}
+.stage-bar{border-bottom:0}
+.stage-tab-box{display:inline-flex;align-items:center;justify-content:center;vertical-align:top}
+.stage-tab-box:after,.stage-tab-box.stage-tab-active:after{display:none!important}
+.roster-head-title{display:flex;align-items:baseline;gap:16rpx;min-width:0}
+.roster-head-title .roster-title{white-space:nowrap}
+.roster-count{min-width:0;color:#777b81;font-size:24rpx;font-weight:600;text-align:left;white-space:nowrap}
+.roster-search-input{box-sizing:border-box;flex:none;width:250rpx;height:58rpx;padding:0 16rpx;border:2rpx solid #d4d8dc;border-radius:8rpx;background:#fafafa;color:#202124;font-size:26rpx;line-height:58rpx}
+.roster-search-input:focus{border-color:#e87800;background:#fff}
+.keyboard-switch{display:flex;align-items:center;gap:12rpx;margin-top:14rpx;width:max-content;padding:8rpx 14rpx;border:1rpx solid #d9dde1;border-radius:999rpx;background:#fff;color:#656a70;font-size:22rpx}
+.keyboard-switch-label{color:#c45d00;font-weight:600}
+.keyboard-switch-action{color:#85898f}
+.keyboard-switch-entry{margin-top:0;flex:none}
+.roster-head-actions{display:flex;align-items:center;gap:10rpx;flex:none}
+.upload-record-button{display:flex;align-items:center;justify-content:center;width:92rpx;height:58rpx;margin:0;padding:0;border:1rpx solid #d86d00!important;border-radius:8rpx!important;background:#fff7ed!important;color:#c45d00!important;font-size:25rpx;line-height:1}
+.upload-record-button:after{border:0}
+.upload-record-button[disabled]{opacity:.6}
+.roster-search-empty{padding:44rpx 20rpx;font-size:28rpx}
+.roster-row-focus{background:#fff0d6;box-shadow:inset 8rpx 0 #e87800,0 0 0 2rpx rgba(232,120,0,.16)}
+
+.cloud-sync-status{display:flex;align-items:center;justify-content:space-between;gap:12rpx;margin:0 24rpx 20rpx;padding:12rpx 16rpx;border-radius:8rpx;background:#f3f8f4;color:#28734b;font-size:23rpx;line-height:1.5}.cloud-sync-error{background:#fff5e8;color:#9a5800}.cloud-sync-status button{flex:none;margin:0;padding:0 16rpx;height:48rpx;line-height:48rpx;border:0;border-radius:6rpx;background:#e87800;color:#fff;font-size:22rpx}.cloud-sync-status button:after{border:0}
+
+.entry-input-wrap{width:100%}
+.entry-input-locked .number-input{background:#f2f3f4;color:#8b9095;border-color:#d9dde1}
+.penalty-input-wrap{flex:1;min-width:0}
+.add-penalty[disabled],.remove-penalty[disabled]{opacity:.55}
+.add-penalty-wrap{width:180rpx;flex:none}
+
+/* 成绩表横向铺满工作后台，避免外层页面内边距形成左右白边 */
+.roster-panel{margin-left:-30rpx;margin-right:-30rpx;width:calc(100% + 60rpx);border-left:0;border-right:0;border-radius:0}
+
+/* 记录表与成绩表使用同一全宽边界，避免页面内边距露出白边 */
+.entry-panel{margin-left:-30rpx;margin-right:-30rpx;width:calc(100% + 60rpx);box-sizing:border-box;border-left:0;border-right:0;border-radius:0}
+
+.roster-scroll{width:100%;max-width:100%;overflow:hidden;overscroll-behavior:none}
+.roster-scroll-compact{max-height:none;overflow:visible}
+
+/* 发车、收车时间字号再加一级 */
+.roster-row>text:nth-child(2),.roster-row>text:nth-child(3){font-size:calc(30rpx + 3px)}
+
+
+

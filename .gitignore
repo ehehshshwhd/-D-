@@ -1,0 +1,11 @@
+node_modules/
+backups/
+.racing-tools/
+.deploy-staging-*/
+.github-upload-*/
+.env*
+$env
+admin-user.json
+admin-query.json
+project.private.config.json
+*.zip

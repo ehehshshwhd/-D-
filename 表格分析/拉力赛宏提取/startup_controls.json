@@ -1,0 +1,137 @@
+[
+  {
+    "file": "jdecontrol1.xml",
+    "type": "commandbutton",
+    "properties": {
+      "actions": {
+        "enabled": "true",
+        "word_wrap": "true",
+        "auto_size": "false"
+      },
+      "facade": {
+        "caption": "填写赛事名称和分组",
+        "name": "CommandButton1",
+        "back_color": "4292401368",
+        "fore_color": "4278190080",
+        "visible": "true",
+        "back_style": "true"
+      },
+      "geometry": {
+        "left": "698500",
+        "top": "241300",
+        "width": "1270000",
+        "height": "406400"
+      },
+      "font": {
+        "family": "宋体",
+        "pointsize": "10",
+        "weight": "50",
+        "italic": "false",
+        "underline": "false",
+        "strickout": "false"
+      }
+    }
+  },
+  {
+    "file": "jdecontrol2.xml",
+    "type": "commandbutton",
+    "properties": {
+      "actions": {
+        "enabled": "true",
+        "word_wrap": "true",
+        "auto_size": "false"
+      },
+      "facade": {
+        "caption": "生成赛段表和成绩表",
+        "name": "CommandButton2",
+        "back_color": "4292401368",
+        "fore_color": "4278190080",
+        "visible": "true",
+        "back_style": "true"
+      },
+      "geometry": {
+        "left": "698500",
+        "top": "1644650",
+        "width": "1270000",
+        "height": "400050"
+      },
+      "font": {
+        "family": "宋体",
+        "pointsize": "10",
+        "weight": "50",
+        "italic": "false",
+        "underline": "false",
+        "strickout": "false"
+      }
+    }
+  },
+  {
+    "file": "jdecontrol3.xml",
+    "type": "label",
+    "properties": {
+      "actions": {
+        "enabled": "true",
+        "text_align": "2",
+        "word_wrap": "true",
+        "auto_size": "false"
+      },
+      "facade": {
+        "caption": "本软件表格为东莞市炫影体育科技有限公司©版权所有",
+        "name": "Label1",
+        "back_color": "4292401368",
+        "fore_color": "4278190080",
+        "visible": "true",
+        "back_style": "true",
+        "border_style": "false",
+        "border_color": "-16777216"
+      },
+      "geometry": {
+        "left": "254000",
+        "top": "2222500",
+        "width": "3048000",
+        "height": "203200"
+      },
+      "font": {
+        "family": "宋体",
+        "pointsize": "10",
+        "weight": "50",
+        "italic": "false",
+        "underline": "false",
+        "strickout": "false"
+      }
+    }
+  },
+  {
+    "file": "jdecontrol4.xml",
+    "type": "commandbutton",
+    "properties": {
+      "actions": {
+        "enabled": "true",
+        "word_wrap": "true",
+        "auto_size": "false"
+      },
+      "facade": {
+        "caption": "删除所有生成表",
+        "name": "CommandButton3",
+        "back_color": "4292401368",
+        "fore_color": "4278190080",
+        "visible": "true",
+        "back_style": "true"
+      },
+      "geometry": {
+        "left": "698500",
+        "top": "2540000",
+        "width": "1270000",
+        "height": "406400"
+      },
+      "font": {
+        "family": "宋体",
+        "pointsize": "10",
+        "weight": "50",
+        "italic": "false",
+        "underline": "false",
+        "strickout": "false"
+      }
+    }
+  }
+]

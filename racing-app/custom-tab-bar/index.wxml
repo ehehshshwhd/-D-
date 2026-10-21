@@ -1,0 +1,1 @@
+<view class="tab-bar"><view wx:for="{{tabs}}" wx:key="1" class="tab {{selected===index?'selected':''}} {{pressing===index?'pressing':''}}" data-i="{{index}}" bindtouchstart="touchStart" bindtouchend="touchEnd" bindtouchcancel="touchEnd" bindtap="switchTab"><text class="tab-icon">{{item[2]}}</text><text>{{item[0]}}</text></view></view>

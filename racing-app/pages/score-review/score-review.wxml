@@ -1,0 +1,33 @@
+<view class="review-page">
+  <view class="review-shell">
+    <view class="review-sidebar">
+      <view class="brand-mark"><view class="brand-symbol">R</view><view><text class="brand-name">RALLY OPS</text><text class="brand-sub">赛事控制台</text></view></view>
+      <view class="side-label">WORKSPACE</view>
+      <view class="side-link side-link-active"><text class="side-icon">▦</text><text>成绩审核</text></view>
+      <view class="side-link"><text class="side-icon">↥</text><text>导入记录</text></view>
+      <view class="side-link"><text class="side-icon">↧</text><text>导出中心</text></view>
+      <view class="side-spacer"></view>
+      <view class="side-footer"><text class="side-label">权限</text><text class="side-role">最高管理员</text><text class="side-user">137****2574</text></view>
+    </view>
+    <view class="review-main">
+      <view class="topbar"><view><text class="hero-kicker">RACE CONTROL / REVIEW</text><text class="hero-title">成绩审核</text></view><view class="topbar-actions"><button class="top-action" bindtap="importExcel">导入 Excel</button><button class="top-action" bindtap="exportExcel">导出 Excel</button><button class="top-approve" loading="{{busy}}" disabled="{{busy || !totalCount}}" bindtap="approveAllScores">一键通过全部成绩</button><button class="top-publish" bindtap="publishScores">发布成绩</button></view></view>
+      <view class="event-picker-wrap">
+    <picker mode="selector" range="{{eventOptions}}" range-key="name" value="{{eventIndex}}" bindchange="onEventChange">
+      <view class="event-picker"><view class="event-picker-copy"><text class="event-picker-label">当前赛事</text><text class="event-picker-name">{{eventName}}</text><text class="event-picker-meta">{{eventDate}} · {{eventStatus}}</text></view><text class="picker-arrow">⌄</text></view>
+    </picker>
+      </view>
+      <view class="summary-bar"><view class="summary-item"><text class="summary-value">{{totalCount}}</text><text class="summary-label">全部记录</text></view><view class="summary-item summary-pending"><text class="summary-value">{{pendingCount}}</text><text class="summary-label">待审核</text></view><view class="summary-item summary-passed"><text class="summary-value">{{passedCount}}</text><text class="summary-label">已通过</text></view><view class="summary-note"><text>最后同步</text><strong>刚刚</strong></view></view>
+
+  <view class="summary-bar"><view class="summary-item"><text class="summary-value">{{totalCount}}</text><text class="summary-label">全部</text></view><view class="summary-divider"></view><view class="summary-item summary-pending"><text class="summary-value">{{pendingCount}}</text><text class="summary-label">待审核</text></view><view class="summary-divider"></view><view class="summary-item summary-passed"><text class="summary-value">{{passedCount}}</text><text class="summary-label">已通过</text></view></view>
+
+      <view class="stage-section"><view class="section-head"><view><text class="section-kicker">STAGE</text><text class="section-title">成绩范围</text></view><text class="section-hint">选择要审核的赛段</text></view><scroll-view class="stage-scroll" scroll-x="true" show-scrollbar="false"><view class="stage-track"><view wx:for="{{stages}}" wx:key="*this" class="stage-chip {{item == selectedStage ? 'stage-chip-active' : ''}}" data-stage="{{item}}" bindtap="selectStage">{{item == 'ALL' ? '总成绩' : item}}</view></view></scroll-view></view>
+
+      <view class="records-section"><view class="records-head"><view><text class="section-kicker">REVIEW QUEUE</text><text class="section-title">{{selectedStage == 'ALL' ? '总成绩' : selectedStage}}审核清单</text></view><view class="records-tools"><input class="records-search" placeholder="搜索车号" value="{{searchQuery}}" bindinput="onSearchInput"/><text class="record-count">{{filteredRecords.length}} 条</text></view></view><scroll-view class="filter-scroll" scroll-x="true" show-scrollbar="false"><view class="filter-track"><view wx:for="{{filterOptions}}" wx:key="key" class="filter-chip {{item.key == selectedFilter ? 'filter-chip-active' : ''}}" data-filter="{{item.key}}" bindtap="selectFilter">{{item.label}}</view></view></scroll-view>
+    <view wx:if="{{filteredRecords.length === 0}}" class="empty-state"><view class="empty-icon">—</view><text class="empty-title">暂无成绩记录</text><text class="empty-subtitle">工作人员上传后，记录会出现在这里。</text></view>
+    <view wx:for="{{filteredRecords}}" wx:key="id" class="record-item {{item.id == expandedId ? 'record-item-expanded' : ''}}" data-id="{{item.id}}" bindtap="toggleRecord"><view class="record-main"><text class="car-number">{{item.carNumber}}</text><text class="duration">{{item.duration || '—'}}</text><text class="record-status status-{{item.status}}">{{item.statusLabel}}</text><text class="record-chevron">{{item.id == expandedId ? '⌃' : '⌄'}}</text></view><view wx:if="{{item.id == expandedId}}" class="record-detail"><view class="detail-grid"><view><text>发车时间</text><strong>{{item.startTime || '—'}}</strong></view><view><text>收车时间</text><strong>{{item.endTime || '—'}}</strong></view><view><text>罚时</text><strong>{{item.penalty || '—'}}</strong></view><view><text>上传人</text><strong>{{item.uploader || '—'}}</strong></view></view></view></view>
+  </view>
+
+      <view class="publish-dock"><view><text class="publish-title">{{selectedStage == 'ALL' ? '总成绩' : selectedStage}}审核稿</text><text class="publish-subtitle">{{pendingCount ? '还有记录待审核' : '确认后对普通用户开放'}}</text></view><button class="publish-button" loading="{{busy}}" disabled="{{busy}}" bindtap="publishScores">发布成绩</button></view>
+    </view>
+  </view>
+</view>

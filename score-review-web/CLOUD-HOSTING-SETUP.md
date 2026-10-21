@@ -1,0 +1,34 @@
+# CloudBase 云托管部署
+
+仓库根目录已提供 `Dockerfile`，容器会启动网页和同源 API，并读取微信小程序当前使用的 `work_records` 集合。数据库凭证只通过云托管环境变量注入，不写入代码或网页前端。
+
+## 云托管控制台设置
+
+1. 在云托管中从 GitHub 创建服务，仓库选 `ehehshshwhd/111`，分支选 `feature/cloud-hosting`。
+2. 构建上下文选仓库根目录，Dockerfile 路径填写 `Dockerfile`。容器监听端口为 `8080`，由平台的 `PORT` 环境变量覆盖也可以。
+3. 给服务配置以下环境变量：
+
+   - `SCORE_REVIEW_PASSWORD`：网页管理员登录密码。
+   - `SCORE_REVIEW_SESSION_SECRET`：独立随机长字符串，至少 32 个字符。
+   - `SCORE_REVIEW_CLOUDBASE_ENV`：`cloud1-d5gurg39naf27d7a7`。
+   - `CLOUDBASE_API_KEY`：当前 CloudBase 环境的服务端 API Key。也兼容 `CLOUDBASE_APIKEY` 和 `SCORE_REVIEW_CLOUDBASE_APIKEY`。
+   - `SCORE_REVIEW_CORS_ORIGINS`：如果“全新系统”与赛事 API 不同域名，填写完整来源并用英文逗号分隔，例如 `https://你的全新系统域名`；同源部署可留空。
+
+   在云托管环境变量页面开启“API Key 设置”，选择当前环境对应的 API Key；或者把 API Key 作为 `CLOUDBASE_API_KEY` 环境变量配置。API Key 只放在云托管服务端，不要写入网页代码或提交到 GitHub。跨域登录还必须使用 HTTPS，并把目标页面的精确来源加入 `SCORE_REVIEW_CORS_ORIGINS`。
+
+4. 部署后通过云托管提供的 HTTPS 地址打开网页。页面和 `/api` 使用同一域名；小程序继续用 `wx.cloud.callContainer` 连接服务名 `score-review-api`。
+
+容器启动时会强制要求设置管理员密码和会话密钥。`SCORE_REVIEW_CLOUDBASE_ENV` 未设置时，服务只会使用容器本机文件存储，不会与小程序共享数据；要读取或修改小程序成绩，请同时配置该环境 ID 和当前环境的 `CLOUDBASE_API_KEY`，并确认云托管服务有访问该环境数据库的权限。网页通过独立的 HttpOnly 会话认证；不要把数据库密钥、密码或会话密钥提交到 GitHub。
+
+## 本机检查
+
+在 `score-review-web` 目录执行：
+
+```powershell
+$env:SCORE_REVIEW_PASSWORD = '本机测试密码'
+$env:SCORE_REVIEW_SESSION_SECRET = '本机独立随机长字符串'
+$env:PORT = '4173'
+node .\server.js
+```
+
+未设置 `SCORE_REVIEW_CLOUDBASE_ENV` 时使用本地 JSON 文件，适合网页界面和接口冒烟测试；只有在云托管容器内配置 CloudBase 环境后，才会启用共享云数据库。

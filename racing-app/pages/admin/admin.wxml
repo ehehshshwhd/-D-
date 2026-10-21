@@ -1,0 +1,11 @@
+<view class="admin-page">
+  <view wx:if="{{checking}}" class="admin-state">正在校验管理员权限</view>
+  <block wx:elif="{{allowed}}">
+    <view class="admin-head"><view class="admin-mark">管</view><view><view class="admin-title">管理后台</view><view class="admin-subtitle">管理员专用管理入口</view></view></view>
+    <view class="admin-card" hover-class="admin-pressed" data-label="赛事管理" bindtap="placeholder"><text class="admin-icon">赛</text><view class="admin-card-body"><view>赛事管理</view><text>发布、编辑和下架赛事</text></view><text class="admin-arrow">›</text></view>
+    <view class="admin-card" hover-class="admin-pressed" data-label="报名管理" bindtap="placeholder"><text class="admin-icon">报</text><view class="admin-card-body"><view>报名管理</view><text>查看报名和审核信息</text></view><text class="admin-arrow">›</text></view>
+    <view class="admin-card" hover-class="admin-pressed" bindtap="openScoreReview"><text class="admin-icon">成</text><view class="admin-card-body"><view>成绩审核</view><text>整理、审核并发布赛事成绩</text></view><text class="admin-arrow">›</text></view>
+    <view wx:if="{{isAdmin}}" class="admin-card" hover-class="admin-pressed" bindtap="openPermissions"><text class="admin-icon">权</text><view class="admin-card-body"><view>权限管理</view><text>{{isSuperAdmin ? '添加、停用或移除管理员和工作人员' : '添加和调整工作人员权限'}}</text></view><text class="admin-arrow">›</text></view>
+  </block>
+  <view wx:else class="admin-state">当前账号没有管理员权限</view>
+</view>
