@@ -252,8 +252,12 @@ const server = http.createServer(async (req, res) => {
       } catch (error) { return cloudError(res, error) }
     }
     if (url.pathname === '/api/event-data' && req.method === 'PUT') {
+      let requestEventId = ''
+      let requestKey = ''
       try {
         const input = await body(req)
+        requestEventId = String(input && input.eventId || '')
+        requestKey = String(input && input.key || '')
         if (!isValidEventId(input.eventId) || typeof input.key !== 'string' || !/^[\w:.-]{1,180}$/.test(input.key) || ['__proto__', 'prototype', 'constructor'].includes(input.key) || !Object.prototype.hasOwnProperty.call(input, 'value')) return send(res, 400, { ok: false, message: '赛事 ID、数据键或数据内容无效' })
         if (Buffer.byteLength(JSON.stringify(input.value), 'utf8') > 700 * 1024) return send(res, 400, { ok: false, message: '单项赛事数据超过安全大小，请拆分后保存' })
         const eventId = validateEventId(input.eventId)
@@ -270,7 +274,24 @@ const server = http.createServer(async (req, res) => {
         const verified = readData().eventManagementData?.[eventId]?.[input.key]
         if (!verified || verified.revision !== revision || JSON.stringify(verified.value) !== JSON.stringify(input.value)) return send(res, 500, { ok: false, message: '赛事数据本地回读核对失败' })
         return send(res, 200, { ok: true, storage: 'server-file', eventId, key: input.key, revision, verified: true })
-      } catch (error) { return send(res, 400, { ok: false, message: error.message || '赛事数据保存失败' }) }
+      } catch (error) {
+        const conflict = /已在其他设备修改|版本冲突/.test(String(error && error.message || ''))
+        console.error('[api/event-data] PUT failed', {
+          eventId: requestEventId,
+          key: requestKey,
+          name: error && error.name,
+          code: error && error.code,
+          phase: error && error.phase,
+          message: error && error.message,
+          stack: error && error.stack
+        })
+        return send(res, conflict ? 409 : 500, {
+          ok: false,
+          code: error && error.code || (conflict ? 'REVISION_CONFLICT' : 'EVENT_DATA_WRITE_FAILED'),
+          phase: error && error.phase || undefined,
+          message: error && error.message || '赛事数据保存失败'
+        })
+      }
     }
     if (url.pathname === '/api/app-data' && req.method === 'GET') {
       try {

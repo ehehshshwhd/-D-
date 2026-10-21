@@ -944,9 +944,13 @@ async function listEventData(eventId) {
     const page = await db.collection('event_management_data').where({ eventId: id }).skip(offset).limit(100).get()
     const records = Array.isArray(page.data) ? page.data : []
     for (const record of records) {
+      // A malformed/null document must not abort loading every other event record.
+      // It is intentionally omitted; the client can then offer its local value for repair.
+      if (!record || typeof record !== 'object' || Array.isArray(record)) continue
       const key = validateEventDataKey(record.key)
       if (Object.prototype.hasOwnProperty.call(items, key)) throw new Error(`赛事云端数据重复：${key}；请先清理重复记录`)
-      items[key] = { value: record.value, revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0, updatedAt: record.updatedAt || null }
+      const recordRevision = Number(record.revision)
+      items[key] = { value: record.value, revision: Number.isSafeInteger(recordRevision) && recordRevision >= 0 ? recordRevision : 0, updatedAt: record.updatedAt || null }
     }
     if (records.length < 100) break
   }
@@ -963,20 +967,42 @@ async function putEventData(eventId, rawKey, value, expectedRevision) {
   if (typeof db.runTransaction !== 'function') throw new Error('云数据库事务不可用，未写入赛事数据')
   const _id = eventDataDocumentId(id, key)
   const revision = expectedRevision + 1
-  await db.runTransaction(async transaction => {
-    const collection = transaction.collection('event_management_data')
-    let previous = null
-    try { const result = await collection.doc(_id).get(); previous = result && result.data || null }
-    catch (error) { if (!isMissingDocumentError(error)) throw error }
-    const actual = Number.isSafeInteger(Number(previous && previous.revision)) && Number(previous && previous.revision) >= 0 ? Number(previous.revision) : 0
-    if (actual !== expectedRevision) throw new Error(`赛事数据已在其他设备修改（云端版本 ${actual}，本地版本 ${expectedRevision}），本次未覆盖，请刷新后重试`)
-    const now = new Date()
-    const document = { eventId: id, key, value, revision, updatedAt: now }
-    if (previous) await collection.doc(_id).update(document)
-    else await collection.doc(_id).set({ ...document, createdAt: now })
-    const readback = await collection.doc(_id).get()
-    if (!readback || !readback.data || Number(readback.data.revision) !== revision || stableStringify(readback.data.value) !== stableStringify(value)) throw new Error('赛事数据云端回读核对失败，未确认保存成功')
-  })
+  let phase = 'transaction-start'
+  try {
+    await db.runTransaction(async transaction => {
+      phase = 'transaction-read'
+      if (!transaction || typeof transaction.collection !== 'function') throw new Error('CloudBase 事务对象无效')
+      const collection = transaction.collection('event_management_data')
+      if (!collection || typeof collection.doc !== 'function') throw new Error('CloudBase 赛事数据集合不可用')
+      const documentRef = collection.doc(_id)
+      if (!documentRef || typeof documentRef.get !== 'function') throw new Error('CloudBase 赛事数据文档不可用')
+      let previous = null
+      try {
+        const result = await documentRef.get()
+        previous = result && result.data && typeof result.data === 'object' ? result.data : null
+      } catch (error) { if (!isMissingDocumentError(error)) throw error }
+      const previousRevision = previous ? Number(previous.revision) : 0
+      const actual = Number.isSafeInteger(previousRevision) && previousRevision >= 0 ? previousRevision : 0
+      if (actual !== expectedRevision) throw new Error(`赛事数据已在其他设备修改（云端版本 ${actual}，本地版本 ${expectedRevision}），本次未覆盖，请刷新后重试`)
+      const now = new Date()
+      const document = { eventId: id, key, value, revision, updatedAt: now }
+      phase = previous ? 'transaction-update' : 'transaction-create'
+      if (previous) await documentRef.update(document)
+      else await documentRef.set({ ...document, createdAt: now })
+      phase = 'transaction-verify'
+      const readback = await documentRef.get()
+      const saved = readback && readback.data && typeof readback.data === 'object' ? readback.data : null
+      if (!saved || Number(saved.revision) !== revision || stableStringify(saved.value) !== stableStringify(value)) throw new Error('赛事数据云端回读核对失败，未确认保存成功')
+    })
+  } catch (error) {
+    // Preserve the original stack for server-side diagnosis without logging user content.
+    console.error('[event-data] cloud write failed', { eventId: id, key, phase, name: error && error.name, message: error && error.message, stack: error && error.stack })
+    const wrapped = new Error(`赛事数据云端写入失败（${phase}）：${error && error.message || '未知错误'}`)
+    wrapped.code = error && error.code || 'EVENT_DATA_WRITE_FAILED'
+    wrapped.phase = phase
+    wrapped.cause = error
+    throw wrapped
+  }
   return { eventId: id, key, revision, verified: true }
 }
 
