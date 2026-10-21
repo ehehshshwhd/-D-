@@ -31,6 +31,72 @@
   .x-scroll::-webkit-scrollbar { height: 12px; }
   .x-scroll::-webkit-scrollbar-track { background: #f1f1f1; }
   .x-scroll::-webkit-scrollbar-thumb { background: #a6a6a6; border-radius: 6px; border: 2px solid #f1f1f1; }
+  /* Ported from the legacy event system's 390 × 844 mini-program preview. */
+  .race-phone-preview { position: relative; width: 390px; height: 844px; flex: 0 0 390px; overflow: hidden; border-radius: 36px; background: #fff; color: #253746; box-shadow: 0 24px 70px rgba(0,0,0,.4); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+  .race-phone-preview::after { content:""; position:absolute; z-index:5; left:50%; bottom:10px; width:138px; height:5px; transform:translateX(-50%); border-radius:999px; background:#111; pointer-events:none; }
+  .race-phone-status { position:relative; z-index:2; height:24px; box-sizing:border-box; padding:0 20px; display:flex; align-items:center; justify-content:space-between; background:#ff9700; color:#fff; font-size:12px; }
+  .race-phone-status::after { content:""; position:absolute; z-index:0; top:0; left:50%; width:220px; height:31px; transform:translateX(-50%); border-radius:0 0 22px 22px; background:#050505; }
+  .race-phone-status>span { position:relative; z-index:1; }
+  .race-phone-nav { position:relative; height:44px; box-sizing:border-box; padding:0 18px; display:flex; align-items:center; justify-content:center; background:#ff9700; color:#fff; font-size:16px; font-weight:500; }
+  .race-phone-back,.race-phone-menu { position:absolute; top:50%; transform:translateY(-50%); color:#fff; }
+  .race-phone-back { left:20px; font-size:42px; font-weight:200; line-height:1; }
+  .race-phone-menu { right:18px; padding:7px 10px; border:1px solid rgba(255,255,255,.45); border-radius:20px; background:rgba(90,54,0,.28); font-size:14px; letter-spacing:1px; line-height:1; }
+  .race-phone-scroll { height:calc(100% - 68px); box-sizing:border-box; padding:19px 15.5px 30px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
+  .race-phone-scroll::-webkit-scrollbar { width:0; height:0; }
+  .race-phone-intro { padding:0 0 8px; }
+  .race-phone-title { margin:0; color:#111; font-size:18px; line-height:1.52; font-weight:400; overflow-wrap:anywhere; }
+  .race-phone-meta { position:relative; display:flex; align-items:center; gap:9px; margin-top:14px; min-height:24px; color:#9b9b9b; font-size:13px; line-height:1.5; }
+  .race-phone-meta-status { margin-left:auto; white-space:nowrap; color:#a0a0a0; }
+  .race-phone-notice { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:16px 0; padding:13px 14px; background:#fff7eb; color:#f07800; font-size:16px; line-height:1.5; }
+  .race-phone-notice b { font-size:24px; font-weight:400; line-height:1; }
+  .race-phone-section { padding:0 0 12px; }
+  .race-phone-section h2 { margin:0 0 13px; padding-left:7.5px; border-left:2.5px solid #ff9500; color:#111; font-size:17px; line-height:21px; font-weight:400; }
+  .race-phone-signup { display:block; color:#111; }
+  .race-phone-signup-row { min-height:25px; padding:0 0 0 7px; font-size:13.5px; line-height:25px; overflow-wrap:anywhere; }
+  .race-phone-signup-row strong,.race-phone-signup-row span { color:#263a48; font-size:16px; font-weight:500; }
+  .race-phone-signup-row span { color:#4b555c; font-weight:400; }
+  .race-phone-actions { display:flex; gap:12px; margin:8px 0 22px; }
+  .race-phone-actions button { min-height:30px; padding:0 8px; border:1px solid #ff9500; border-radius:16px; background:#ff9500; color:#fff; font:inherit; font-size:13px; }
+  .race-phone-actions button+button { background:#fff; color:#f90; }
+  .race-phone-info { padding:0 0 12px; }
+  .race-phone-info-line { display:flex; gap:8px; padding:4px 0; color:#4b555c; font-size:15px; line-height:1.65; overflow-wrap:anywhere; }
+  .race-phone-info-line strong { flex:none; color:#8a949b; font-weight:400; }
+  .race-phone-divider { height:8px; margin:4px -15.5px 14px; background:#f5f5f7; }
+  .race-phone-cover { display:block; width:calc(100% + 31px); height:auto; max-width:none; object-fit:contain; border-radius:0; margin:-19px -15.5px 18px; }
+  .race-phone-content img { display:block; width:100%; height:auto; max-width:100%; object-fit:contain; border-radius:2px; margin:0 0 18px; }
+  .race-phone-content { color:#3e3e3e; font-size:14px; line-height:1.88; letter-spacing:.15px; overflow-wrap:anywhere; word-break:break-word; }
+  .race-phone-content p,.race-phone-content h1,.race-phone-content h2,.race-phone-content h3,.race-phone-content h4,.race-phone-content blockquote { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .race-phone-content p { margin:0 0 13px; }
+  .race-phone-content h1,.race-phone-content h2,.race-phone-content h3,.race-phone-content h4 { margin:18px 0 10px; color:#222; line-height:1.45; }
+  .race-phone-content ul,.race-phone-content ol { margin:0 0 14px; padding-left:22px; list-style-position:outside; }
+  .race-phone-content li { margin:0 0 8px; padding-left:0; text-indent:0; }
+  .race-phone-content table { width:100%; max-width:100%; margin:0; border-collapse:collapse; table-layout:fixed; font-size:11px; color:#222; }
+  .race-phone-content th,.race-phone-content td { padding:5px 2px; border:1px solid #e6e6e6; text-align:center; line-height:1.35; word-break:break-word; overflow-wrap:anywhere; }
+  .race-phone-content th { background:#eaf3fb; font-weight:700; }
+  .race-phone-content .mini-preview-table-wrap { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+  .race-phone-content .mini-preview-prize-block { margin:17px 0 24px; border:0; border-radius:0; overflow:visible; background:transparent; font-size:11px; color:#222; }
+  .race-phone-content .mini-preview-prize-title { padding:9px 6px; text-align:center; font-size:13.5px; font-weight:700; line-height:1.4; background:#ffc313; color:#111; }
+  .race-phone-content .mini-preview-prize-blue .mini-preview-prize-title { background:#1886d2; color:#fff; }
+  .race-phone-content .mini-preview-prize-orange .mini-preview-prize-title { background:#f39800; color:#fff; }
+  .race-phone-content .mini-preview-prize-maroon .mini-preview-prize-title { background:#8f1f27; color:#fff; }
+  .race-phone-content .mini-preview-prize-green .mini-preview-prize-title { background:#3b8c58; color:#fff; }
+  .race-phone-content .mini-preview-prize-yellow .mini-preview-prize-title { background:#f1c40f; color:#111; }
+  .race-phone-content .mini-preview-prize-purple .mini-preview-prize-title { background:#8e5aa8; color:#fff; }
+  .race-phone-content .mini-preview-prize-charcoal .mini-preview-prize-title { background:#414141; color:#fff; }
+  .race-phone-content .mini-preview-prize-block .mini-preview-table { margin:0!important; }
+  .race-phone-content .mini-preview-prize-block .mini-preview-table tbody tr:first-child td { border-top:0; }
+  .race-phone-content .mini-preview-prize-block .mini-preview-table tbody tr.mini-preview-prize-total-row td { background:#fff8e7; border-top:1px solid #e2c27a; color:#b46900; font-weight:700; }
+  .race-phone-content .mini-preview-prize-group { width:100%; min-width:0; margin:0 0 18px; overflow:visible; }
+  .race-phone-content .mini-preview-prize-group[hidden] { display:none!important; }
+  .race-phone-content .mini-preview-prize-table { min-width:0; width:100%; }
+  .race-phone-content .mini-preview-prize-table th,.race-phone-content .mini-preview-prize-table td { padding:5px 2px; font-size:11px; white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
+  .race-phone-content .mini-preview-stage-banner { min-height:44px; max-width:100%; margin:19px 0 21px; padding:5px 9px; border:1px solid #4781b7; border-radius:2px; display:flex; align-items:center; position:relative; overflow:hidden; font-size:13px; box-sizing:border-box; }
+  .race-phone-content .mini-preview-stage-brand { display:flex; flex:0 0 62px; width:62px; min-width:62px; max-width:62px; flex-direction:column; align-items:center; justify-content:center; overflow:visible; white-space:nowrap; text-align:center; font-size:10.5px; line-height:11px; font-weight:700; color:#ffd21a; text-shadow:1px 1px 1px #000; -webkit-text-stroke:.35px #000; paint-order:stroke fill; }
+  .race-phone-content .mini-preview-stage-brand small { display:block; color:#fff; font-size:5.2px; line-height:6px; font-weight:400; text-shadow:1px 1px 1px #000; -webkit-text-stroke:.3px #000; }
+  .race-phone-content .mini-preview-stage-title { display:block; flex:1 1 auto; min-width:0; margin-left:6px; color:#fff; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .race-phone-content .mini-preview-stage-banner>b { flex:0 0 auto; margin-left:auto; color:#fff; font-size:22px; line-height:1; }
+  .race-phone-content [style*="background"] { background-clip:padding-box; }
+  @media (max-width: 430px) { .race-phone-preview { border-radius:24px; } }
   .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .editor-content p { margin: 6px 0; line-height: 31px; }
   .sticky-right { position: sticky; right: 0; box-shadow: -8px 0 10px -6px rgba(0,0,0,.12); }
@@ -1154,6 +1220,66 @@ function CityPicker({ value, onChange }) {
   );
 }
 
+function MigratedEventPhonePreview({ preview, scale, onClose }) {
+  const dates = preview.dates || {};
+  const signupOptions = Array.isArray(preview.signupOptions) ? preview.signupOptions : [];
+  const notices = Array.isArray(preview.notices) ? preview.notices : [];
+  const infoRows = [
+    ['比赛时间：', `${dates.start || '待设置'} ~ ${dates.end || '待设置'}`],
+    ['报名截止：', dates.deadline || '待设置'],
+    ['集合地址：', preview.address || '待设置'],
+    ['联系人：', preview.contact || '待设置'],
+    ['联系电话：', preview.phone || ''],
+    ['微信号：', preview.wechat || ''],
+    ['举办城市：', preview.city || '']
+  ].filter(([, value]) => String(value || '').trim());
+  return <div className="fixed inset-0 z-[10002] bg-black/80 flex flex-col items-center justify-center p-3 sm:p-5" onClick={onClose}>
+    <section role="dialog" aria-modal="true" aria-label="赛事手机预览" onClick={event => event.stopPropagation()} className="w-full max-w-[560px] min-h-0 flex flex-col items-center gap-3">
+      <header className="w-full flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-lg">
+        <div><h2 className="font-bold text-lg text-gray-900">手机预览</h2><p className="text-xs text-gray-500 mt-1">展示当前编辑内容，无需保存</p></div>
+        <button type="button" aria-label="关闭手机预览" onClick={onClose} className="px-3 py-2 text-2xl leading-none text-gray-500 hover:text-gray-900">×</button>
+      </header>
+      <div className="min-h-0 max-w-full overflow-auto flex items-center justify-center" style={{ height: 844 * scale, width: 390 * scale, flex: '0 0 auto' }}>
+        <div className="race-phone-preview" style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+          <div className="race-phone-status"><span>10:07</span><span aria-hidden="true">◔ ▭</span></div>
+          <div className="race-phone-nav"><span className="race-phone-back" aria-hidden="true">‹</span><span>赛事详情</span><span className="race-phone-menu" aria-hidden="true">•••　◉</span></div>
+          <div className="race-phone-scroll">
+            {preview.cover && <img className="race-phone-cover" src={preview.cover} alt="赛事封面" />}
+            <section className="race-phone-intro">
+              <h1 className="race-phone-title">{preview.title || '未填写赛事标题'}</h1>
+              <div className="race-phone-meta"><span>◷  {dates.display || dates.start || '待设置'}</span><span>◉  {Number(preview.views) || 0}</span><span className="race-phone-meta-status">{preview.status || '报名中'}</span></div>
+              {notices.length > 0 && <div className="race-phone-notice"><span>{`该赛事有${notices.length}条公告(点击查看)`}</span><b aria-hidden="true">›</b></div>}
+            </section>
+            {signupOptions.length > 0 && <section className="race-phone-section">
+              <h2>{preview.sectionTitles?.signup || '赛事报名'}</h2>
+              <div className="race-phone-signup">{signupOptions.map((option, index) => {
+                const name = String(option.name || option.groupName || option.名称 || '').trim();
+                const rawFee = String(option.fee ?? option.price ?? option.报名费 ?? '0').replace(/^¥\s*/, '').trim();
+                const unit = String(option.unit || option.报名单位 || '人').trim().replace(/^车$/, '辆');
+                const fee = /\/(?:辆|车|人)\s*$/.test(rawFee) ? rawFee : `${rawFee}/${unit}`;
+                const note = String(option.note || option.报名备注 || '').trim();
+                return <div className="race-phone-signup-row" key={`${name}-${index}`}><strong>{name}</strong>　¥ {fee}{note && `（${note}）`} <span>(已报<span style={{ color: '#f90' }}>0</span>{unit === '辆' ? '辆' : unit})</span></div>;
+              })}</div>
+              <div className="race-phone-actions"><button type="button">{preview.sectionTitles?.results || '查看赛事详情'}</button><button type="button">查看报名列表</button></div>
+            </section>}
+            <div className="race-phone-divider" />
+            <section className="race-phone-section race-phone-info">
+              <h2>{preview.sectionTitles?.info || '赛事信息'}</h2>
+              {infoRows.map(([label, value]) => <div className="race-phone-info-line" key={label}><strong>{label}</strong><span>{value}{label === '联系人：' && preview.phone && <a href={`tel:${preview.phone}`} style={{ color: '#4b555c', textDecoration: 'none' }}>(点击拨打)</a>}</span></div>)}
+            </section>
+            <div className="race-phone-divider" />
+            <section className="race-phone-section">
+              <h2>{preview.sectionTitles?.detail || '赛事详情'}</h2>
+              <div className="race-phone-content" dangerouslySetInnerHTML={{ __html: preview.content || '' }} />
+            </section>
+          </div>
+          <div className="absolute right-3 top-[52%] z-[4] grid justify-items-center gap-1 text-gray-500 pointer-events-none" aria-hidden="true"><span className="text-[28px] text-white" style={{ WebkitTextStroke: '1px #929292' }}>♡</span><b className="text-sm mb-2">{Number(preview.likes) || 0}</b><span className="text-[28px] text-white" style={{ WebkitTextStroke: '1px #929292' }}>▣</span><b className="text-sm mb-2">{Number(preview.comments) || 0}</b><span className="text-[28px] text-white" style={{ WebkitTextStroke: '1px #929292' }}>↗</span><b className="text-sm">{Number(preview.shares) || 0}</b></div>
+        </div>
+      </div>
+    </section>
+  </div>;
+}
+
 function InfoTab({ ev, onHome }) {
   const [f, setF] = useState({
     title: ev.isNew ? "" : ev.title.slice(0, 120),
@@ -1178,8 +1304,8 @@ function InfoTab({ ev, onHome }) {
   const upload=useRef();
   const [phonePreview,setPhonePreview]=useState(null);
   const [previewScale,setPreviewScale]=useState(1);
-  useEffect(()=>{const fit=()=>setPreviewScale(Math.max(0.1,Math.min(1,(window.innerWidth-32)/390,(window.innerHeight-32)/844)));fit();window.addEventListener('resize',fit);return()=>window.removeEventListener('resize',fit)},[]);
-  const buildPhonePreview=()=>{const doc=new DOMParser().parseFromString(editorContent||'','text/html');doc.querySelectorAll('script,iframe,object,embed,style,link').forEach(n=>n.remove());doc.body.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value)))n.removeAttribute(a.name)}));const savedGroups=store('groups-'+ev.id,[]);const signupOptions=Array.isArray(ev.signupOptions)&&ev.signupOptions.length?ev.signupOptions:savedGroups.filter(g=>g['开启报名']==='是'&&g['是否显示']==='是').map(g=>({name:g.名称,fee:g.报名费,unit:g.报名单位||'人',note:g.报名备注||''}));const notices=store('notice-'+ev.id,[]).filter(n=>!n['状态']||['已发布','显示','正常'].includes(n['状态']));return {title:f.title||'未填写赛事标题',city:f.city,contact:f.contact,phone:f.phone,address:f.address,content:doc.body.innerHTML,dates:Object.fromEntries([...document.querySelectorAll('[data-date]')].map(el=>[el.dataset.date,el.value])),status:ev.status||'报名中',views:ev.views||ev.viewCount||0,signupOptions,notices};};
+  useEffect(()=>{const fit=()=>setPreviewScale(Math.max(0.1,Math.min(1,(window.innerWidth-40)/390,(window.innerHeight-150)/844)));fit();window.addEventListener('resize',fit);return()=>window.removeEventListener('resize',fit)},[]);
+  const buildPhonePreview=()=>{const doc=new DOMParser().parseFromString(editorContent||'','text/html');doc.querySelectorAll('script,iframe,object,embed,style,link,meta,base').forEach(n=>n.remove());doc.body.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src|xlink:href)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value))||(/^style$/i.test(a.name)&&/(?:expression\s*\(|javascript\s*:)/i.test(a.value)))n.removeAttribute(a.name)}));const savedGroups=store('groups-'+ev.id,[]);const signupOptions=Array.isArray(ev.signupOptions)&&ev.signupOptions.length?ev.signupOptions:savedGroups.filter(g=>g&&g['开启报名']==='是'&&g['是否显示']==='是').map(g=>({name:g.名称,fee:g.报名费,unit:g.报名单位||'人',note:g.报名备注||''}));const notices=store('notice-'+ev.id,[]).filter(n=>n&&(!n['状态']||['已发布','显示','正常'].includes(n['状态'])));const dates=Object.fromEntries([...document.querySelectorAll('[data-date]')].map(el=>[el.dataset.date,el.value]));const eventDates=String(ev.form?.dateRange||ev.dateRange||'').trim();return {title:f.title||'未填写赛事标题',city:f.city,contact:f.contact,phone:f.phone,wechat:f.wechat,address:f.address,cover:cover||'',content:doc.body.innerHTML,dates:{...dates,display:ev.form?.displayDate||ev.displayDate||eventDates||[dates.start,dates.end].filter(Boolean).join(' 至 ')},status:ev.status||'报名中',views:ev.views||ev.viewCount||0,likes:ev.likes||ev.likeCount||0,comments:ev.comments||ev.commentCount||0,shares:ev.shares||ev.shareCount||0,sectionTitles:ev.form?.sectionTitles||ev.sectionTitles||{},signupOptions,notices};};
   const openPhonePreview=()=>setPhonePreview(buildPhonePreview());
   useEffect(()=>{if(phonePreview)setPhonePreview(buildPhonePreview())},[f,cover,editorContent]);
   useEffect(()=>{if(!phonePreview)return;const close=e=>{if(e.key==='Escape')setPhonePreview(null)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[phonePreview]);
@@ -1258,7 +1384,7 @@ function InfoTab({ ev, onHome }) {
         <button onClick={()=>{if(confirm('恢复为上次保存的内容？')){setF({...initial.current});setCover(ev.img);document.querySelectorAll('[data-date]').forEach(el=>el.value=el.defaultValue);document.querySelector('[data-editor]').innerHTML=ev.content || '';}}} className="w-[94px] h-[53px] rounded-[4px] bg-white border border-[#dcdfe6] text-[18px] text-[#606266] font-medium hover:text-[#409eff] hover:border-[#c6e2ff]">重置</button>
         <button onClick={()=>submit(true)} title="保存并申请发布；实际同步需要连接小程序后端" className="px-5 h-[53px] rounded-[4px] bg-[#67c23a] text-white text-[18px]">发布到小程序</button>
       </div>
-      {phonePreview&&<div className="fixed inset-0 z-[10002] bg-black/50 flex items-center justify-center p-4" onClick={()=>setPhonePreview(null)}><section role="dialog" aria-modal="true" aria-label="赛事手机预览" onClick={e=>e.stopPropagation()} style={{width:390,minWidth:390,height:844,flexShrink:0,transform:`scale(${previewScale})`,transformOrigin:'center'}} className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"><div className="flex justify-between items-center px-5 py-4 border-b"><div><h2 className="font-bold text-lg">手机预览</h2><p className="text-xs text-gray-500 mt-1">展示当前编辑内容，无需保存</p></div><button type="button" aria-label="关闭手机预览" onClick={()=>setPhonePreview(null)} className="px-3 py-2 text-gray-500">✕</button></div><div style={{flex:1,minHeight:0,overflowY:'auto',overflowX:'hidden',background:'#fff',fontSize:15,lineHeight:1.7,color:'#222'}}><div style={{height:28,background:'#ff9800'}}/><div style={{height:56,background:'#ff9800',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:600}}>赛事详情</div><div style={{padding:'22px 16px 14px',background:'#fff'}}><h1 style={{fontSize:22,lineHeight:1.45,fontWeight:500,margin:'0 0 18px',overflowWrap:'anywhere'}}>{phonePreview.title}</h1><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14,color:'#999',marginBottom:22}}><span>◷  {phonePreview.dates.start||'待设置'}　◉  {phonePreview.views}</span><span>{phonePreview.status}</span></div>{phonePreview.notices.length>0&&<button type="button" style={{width:'100%',border:0,background:'#fff9e6',color:'#f60',padding:'15px 14px',textAlign:'left',fontSize:15,marginBottom:24}}>{`该赛事有${phonePreview.notices.length}条公告(点击查看)`}<span style={{float:'right'}}>›</span></button>}</div>{phonePreview.signupOptions.length>0&&<div style={{padding:'0 14px 22px',background:'#fff'}}><h2 style={{fontSize:20,fontWeight:500,margin:'0 0 12px'}}>赛事报名</h2>{phonePreview.signupOptions.map((option,i)=>{const fee=String(option.fee??option.price??'0').replace(/^¥\s*/,''),unit=option.unit||'人',note=String(option.note||'').trim();return <div key={`${option.name||option.groupName}-${i}`} style={{padding:'7px 4px',fontSize:17,lineHeight:1.6,overflowWrap:'anywhere'}}>{option.name||option.groupName}　¥ {fee}/{unit}{note?`（${note}）`:''} <span style={{whiteSpace:'nowrap'}}>(已报<span style={{color:'#f90'}}>0</span>{unit})</span></div>})}<div style={{display:'flex',gap:12,marginTop:14}}><button type="button" style={{border:'1px solid #ff9800',borderRadius:24,background:'#ff9800',color:'#fff',padding:'8px 14px',fontSize:14}}>查看赛事详情</button><button type="button" style={{border:'1px solid #ff9800',borderRadius:24,background:'#fff',color:'#f90',padding:'8px 14px',fontSize:14}}>查看报名列表</button></div></div>}<div style={{height:8,background:'#f5f5f7'}}/><div style={{padding:'14px 16px 20px',background:'#fff'}}><h2 style={{fontSize:20,fontWeight:500,margin:'0 0 12px'}}>赛事信息</h2><div style={{fontSize:16,color:'#666',lineHeight:1.8}}><p style={{margin:'4px 0'}}>比赛时间：　{phonePreview.dates.start||'待设置'} ~ {phonePreview.dates.end||'待设置'}</p><p style={{margin:'4px 0'}}>报名截止：　{phonePreview.dates.deadline||'待设置'}</p><p style={{margin:'4px 0'}}>集合地址：　{phonePreview.address||'待设置'}</p><p style={{margin:'4px 0'}}>联系人：　{phonePreview.contact||'待设置'} {phonePreview.phone&&<a href={`tel:${phonePreview.phone}`} style={{color:'#666',textDecoration:'none'}}>(点击拨打)</a>}</p><p style={{margin:'4px 0'}}>举办城市：　{phonePreview.city||'待设置'}</p></div></div><div style={{height:8,background:'#f5f5f7'}}/><div style={{padding:'14px 16px',background:'#fff'}}><h2 style={{fontSize:20,fontWeight:500,margin:'0 0 12px'}}>赛事详情</h2><div className="phone-preview-content" style={{overflowWrap:'anywhere'}} dangerouslySetInnerHTML={{__html:phonePreview.content}}/></div></div></section></div>}
+      {phonePreview&&<MigratedEventPhonePreview preview={phonePreview} scale={previewScale} onClose={()=>setPhonePreview(null)} />}
     </>
   );
 }
