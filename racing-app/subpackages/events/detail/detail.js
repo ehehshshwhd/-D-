@@ -269,13 +269,15 @@ function normalizeSignupOptions(value) {
     const name = String(item.name || '').trim()
     const rawFee = String(item.fee || '').trim()
     const feeAmount = rawFee ? (rawFee.startsWith('¥') || rawFee.startsWith('￥') ? rawFee.replace(/^￥/, '¥') : `¥ ${rawFee}`) : ''
-    const feeUnit = /(?:场地赛|攀爬赛|女子组|专业组|新秀组)/.test(name) ? '人' : '辆'
+    const configuredUnit = String(item.unit || '').trim()
+    const feeUnit = configuredUnit === '车' ? '辆' : configuredUnit || (/(?:场地赛|攀爬赛|女子组|专业组|新秀组)/.test(name) ? '人' : '辆')
     const fee = feeAmount && !/\/(?:辆|人)(?:\s|$)/.test(feeAmount) ? `${feeAmount}/${feeUnit}` : feeAmount
-    const quota = String(item.quota || '').trim()
     const note = String(item.note || '').trim()
+    const registeredCount = Number.isFinite(Number(item.registeredCount)) && Number(item.registeredCount) >= 0 ? Math.floor(Number(item.registeredCount)) : 0
+    const countNote = `（已报${registeredCount}${feeUnit}）`
     return {
       ...item,
-      displayText: `${name}${fee ? ` ${fee}` : ''}${quota ? `（名额：${quota}）` : ''}${note ? `（${note}）` : ''}`
+      displayText: `${name}${fee ? ` ${fee}` : ''}${countNote}${note && !/^已报\s*\d+/.test(note) ? `（${note}）` : ''}`
     }
   })
 }

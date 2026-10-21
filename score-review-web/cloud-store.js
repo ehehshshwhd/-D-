@@ -57,7 +57,11 @@ function cleanSignupOptions(value) {
       name: String(option.name || '').trim().slice(0, 120),
       fee: String(option.fee || '').trim().slice(0, 80),
       quota: String(option.quota || '').trim().slice(0, 80),
-      note: String(option.note || '').trim().slice(0, 500)
+      note: String(option.note || '').trim().slice(0, 500),
+      unit: String(option.unit || '').trim().slice(0, 10),
+      registeredCount: Number.isFinite(Number(option.registeredCount)) && Number(option.registeredCount) >= 0
+        ? Math.floor(Number(option.registeredCount))
+        : 0
     }
   })
 }
@@ -327,7 +331,8 @@ function validateEventInput(input) {
     if (item != null && typeof item !== 'object') checkTextType(item, `报名项 ${index + 1}`)
     if (item != null && typeof item === 'object' && Array.isArray(item)) throw new Error(`报名项 ${index + 1} 格式无效`)
     const option = item && typeof item === 'object' ? item : { name: item }
-    ;[['name', 120], ['fee', 80], ['quota', 80], ['note', 500]].forEach(([key, max]) => checkLength(option[key], max, `报名项 ${index + 1} ${key}`))
+    ;[['name', 120], ['fee', 80], ['quota', 80], ['note', 500], ['unit', 10]].forEach(([key, max]) => checkLength(option[key], max, `报名项 ${index + 1} ${key}`))
+    if (option.registeredCount != null && (!Number.isInteger(Number(option.registeredCount)) || Number(option.registeredCount) < 0)) throw new Error(`报名项 ${index + 1} 已报名人数无效`)
     if (!String(option.name || '').trim()) throw new Error(`报名项 ${index + 1} 缺少名称`)
   })
   if (Array.isArray(source.contentBlocks)) source.contentBlocks.forEach((block, index) => {
