@@ -414,6 +414,17 @@ function cloudEventToEditorEvent(source) {
     dates: { start: event.dateStart || event.startAt || event.dates?.start || '', end: event.dateEnd || event.endAt || event.dates?.end || '', deadline: event.registrationDeadline || event.signupDeadline || event.dates?.deadline || '' }
   };
 }
+function assignEventDisplayIds(events) {
+  // Keep the cloud event ID immutable: scores and published snapshots refer to it.
+  // The human-facing number is a separate 1-based sequence in creation order.
+  const ordered = [...events].sort((a, b) => {
+    const dateA = new Date(a.createdAt || 0).getTime() || 0;
+    const dateB = new Date(b.createdAt || 0).getTime() || 0;
+    return dateA - dateB || String(a.id).localeCompare(String(b.id));
+  });
+  const displayIdById = new Map(ordered.map((event, index) => [String(event.id), index + 1]));
+  return events.map(event => ({ ...event, displayId: displayIdById.get(String(event.id)) }));
+}
 function editorEventToCloudEvent(event, fields, dates, content) {
   const form = fields || {};
   return { ...(event && typeof event === 'object' ? event : {}), id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
@@ -423,7 +434,7 @@ async function loadRemoteEvents() {
   const response = await fetch(`${API_URL}/api/events`, { credentials: 'include', headers: { Accept: 'application/json' } });
   let payload = null; try { payload = await response.json(); } catch {}
   if (!response.ok || !payload?.ok) throw new Error(payload?.message || `读取赛事失败（${response.status}）`);
-  EVENTS = (Array.isArray(payload.events) ? payload.events : []).map(cloudEventToEditorEvent);
+  EVENTS = assignEventDisplayIds((Array.isArray(payload.events) ? payload.events : []).map(cloudEventToEditorEvent));
   return true;
 }
 async function saveEditorEvent(event, fields, dates, content, publish, coverFileId='') {
@@ -432,7 +443,7 @@ async function saveEditorEvent(event, fields, dates, content, publish, coverFile
   let payload = null; try { payload = await response.json(); } catch {}
   if (!response.ok || !payload?.ok || !payload.event) throw new Error(payload?.message || `保存赛事失败（${response.status}）`);
   const saved = cloudEventToEditorEvent(payload.event);
-  EVENTS = [saved, ...EVENTS.filter(item => String(item.id) !== String(saved.id))];
+  EVENTS = assignEventDisplayIds([saved, ...EVENTS.filter(item => String(item.id) !== String(saved.id))]);
   return saved;
 }
 async function deleteEditorEvent(id) {
@@ -630,7 +641,7 @@ function EventCard({ ev, onEnter }) {
       <img src={ev.img} alt="" className="w-full block object-cover shrink-0" style={{ aspectRatio: "303 / 216" }} />
       <div className="p-[12px] flex flex-col flex-1">
         <div className="flex items-center gap-[6px] text-[14px] text-[#303133] mb-1">
-          <span className="font-bold">ID：{ev.id}</span>{ev.publicationStatus && <span className="text-xs text-gray-500">{ev.publicationStatus==='draft'?'草稿':ev.publicationStatus==='pending'?'待发布':'已发布'}</span>}
+          <span className="font-bold">ID：{ev.displayId ?? ev.id}</span>{ev.publicationStatus && <span className="text-xs text-gray-500">{ev.publicationStatus==='draft'?'草稿':ev.publicationStatus==='pending'?'待发布':'已发布'}</span>}
           {ev.tag && (
             <span className="h-[20px] leading-[18px] px-[5px] text-[12px] bg-[#f0f9eb] border border-[#e1f3d8] text-[#67c23a] rounded-[2px]">{ev.tag}</span>
           )}
@@ -693,7 +704,7 @@ function Pagination({ page, setPage, size, setSize, total }) {
 function ListPage({ onEnter }) {
   const [page,setPage] = useState(1), [size,setSize] = useState('12条/页');
   const [query,setQuery] = useState('');
-  const filtered = EVENTS.filter(e=>e.title.includes(query) || String(e.id).includes(query));
+  const filtered = EVENTS.filter(e=>e.title.includes(query) || String(e.displayId ?? e.id).includes(query) || String(e.id).includes(query));
   return (
     <div className="pl-[18px] pr-[20px] pb-[40px]">
       <div className="pt-[34px] text-[18px] leading-[24px] text-[#606266]">赛事管理</div>
