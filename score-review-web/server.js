@@ -136,7 +136,7 @@ function cloudError(res, error) {
     message = 'CloudBase 数据集合不可用，请检查数据库集合和服务权限。'
     diagnosticCode = rawCode || 'CLOUD_COLLECTION_ERROR'
   }
-  if (/成绩已被其他设备修改|版本号缺失|本次未覆盖云端数据/i.test(rawMessage)) {
+  if (/数据已在其他设备修改|数据已被其他设备修改|版本号缺失|本次未覆盖云端数据/i.test(rawMessage)) {
     return send(res, 409, { ok: false, code: rawCode || 'REVISION_CONFLICT', message: rawMessage })
   }
   if (/云端(?:成绩记录|已发布成绩|赛事 ID).*重复/i.test(rawMessage)) {
@@ -271,6 +271,35 @@ const server = http.createServer(async (req, res) => {
         if (!verified || verified.revision !== revision || JSON.stringify(verified.value) !== JSON.stringify(input.value)) return send(res, 500, { ok: false, message: '赛事数据本地回读核对失败' })
         return send(res, 200, { ok: true, storage: 'server-file', eventId, key: input.key, revision, verified: true })
       } catch (error) { return send(res, 400, { ok: false, message: error.message || '赛事数据保存失败' }) }
+    }
+    if (url.pathname === '/api/app-data' && req.method === 'GET') {
+      try {
+        if (cloudStore.enabled) return send(res, 200, { ok: true, storage: 'cloudbase', ...await cloudStore.listAppData() })
+        const data = readData().applicationData || {}
+        return send(res, 200, { ok: true, storage: 'server-file', items: data })
+      } catch (error) { return cloudError(res, error) }
+    }
+    if (url.pathname === '/api/app-data' && req.method === 'PUT') {
+      try {
+        const input = await body(req)
+        if (typeof input.key !== 'string' || !/^[\w:.-]{1,180}$/.test(input.key) || ['__proto__', 'prototype', 'constructor'].includes(input.key) || !Object.prototype.hasOwnProperty.call(input, 'value')) return send(res, 400, { ok: false, message: '应用数据键或数据内容无效' })
+        if (Buffer.byteLength(JSON.stringify(input.value), 'utf8') > 700 * 1024) return send(res, 400, { ok: false, message: '单项应用数据超过安全大小，请拆分后保存' })
+        if (cloudStore.enabled) return send(res, 200, { ok: true, storage: 'cloudbase', ...await cloudStore.putAppData(input.key, input.value, input.expectedRevision) })
+        if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0) return send(res, 409, { ok: false, code: 'REVISION_REQUIRED', message: '应用数据版本缺失，请刷新后重试' })
+        const data = readData(); data.applicationData ||= {}
+        const previous = data.applicationData[input.key]
+        const actual = Number.isSafeInteger(Number(previous && previous.revision)) && Number(previous && previous.revision) >= 0 ? Number(previous.revision) : 0
+        if (actual !== input.expectedRevision) return send(res, 409, { ok: false, code: 'REVISION_CONFLICT', message: `应用数据已被修改（版本 ${actual}），请刷新后重试` })
+        const revision = actual + 1
+        data.applicationData[input.key] = { value: input.value, revision, updatedAt: new Date().toISOString() }
+        writeData(data)
+        const verified = readData().applicationData?.[input.key]
+        if (!verified || verified.revision !== revision || JSON.stringify(verified.value) !== JSON.stringify(input.value)) return send(res, 500, { ok: false, message: '应用数据本地回读核对失败' })
+        return send(res, 200, { ok: true, storage: 'server-file', key: input.key, revision, verified: true })
+      } catch (error) {
+        if (cloudStore.enabled) return cloudError(res, error)
+        return send(res, 400, { ok: false, message: error.message || '应用数据保存失败' })
+      }
     }
     if (url.pathname === '/api/events' && req.method === 'DELETE') {
       try {
