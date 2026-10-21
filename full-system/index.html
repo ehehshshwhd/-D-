@@ -320,6 +320,22 @@ main.event-info-single-card .form-col .mt-\[2px\]{font-size:16px;line-height:1.6
  main.event-info-single-card .form-col .mt-\[2px\]{font-size:17px}
 }
 @media(max-width:760px){body,input,button,select,textarea{font-size:16px}header.relative>nav>a{font-size:16px}aside.w-\[266px\]>div{font-size:16px;height:48px}main table,main th{font-size:16px!important}}
+/* All admin views share the available viewport. At the wide desktop size in
+   the reference, the event list uses six evenly sized cards; smaller screens
+   progressively reduce columns rather than forcing a fixed page width. */
+.admin-app{width:100%;min-width:0;min-height:100dvh;--page-inset:clamp(14px,1.25vw,32px);--card-gap:clamp(14px,1.3vw,34px)}
+.admin-app,#root{max-width:100%}
+.admin-app>header.relative{padding-left:var(--page-inset);padding-right:var(--page-inset)}
+.admin-app>header.relative>nav{white-space:nowrap}
+.event-list-page{padding-left:var(--page-inset)!important;padding-right:var(--page-inset)!important}
+.event-card-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));column-gap:var(--card-gap)!important;row-gap:clamp(18px,1vw,28px)!important}
+.event-card-media{aspect-ratio:1.18!important;object-fit:cover}
+.admin-app main.pl-\[28px\]{padding-left:var(--page-inset);padding-right:var(--page-inset)}
+@media(max-width:1919px){.event-card-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:1599px){.event-card-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:1199px){.event-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:899px){.event-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:639px){.event-card-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -674,7 +690,7 @@ function PlainBtn({ children, w = 75, onClick }) {
 function EventCard({ ev, onEnter }) {
   return (
     <div className="border border-[#ebeef5] rounded-[4px] bg-white overflow-hidden hover:shadow-[0_2px_12px_rgba(0,0,0,0.1)] transition-shadow flex flex-col h-full">
-      <img src={ev.img} alt="" className="w-full block object-cover shrink-0" style={{ aspectRatio: "303 / 216" }} />
+      <img src={ev.img} alt="" className="event-card-media w-full block object-cover shrink-0" style={{ aspectRatio: "303 / 256" }} />
       <div className="p-[12px] flex flex-col flex-1">
         <div className="flex items-center gap-[6px] text-[14px] text-[#303133] mb-1">
           <span className="font-bold">ID：{ev.displayId ?? ev.id}</span>{ev.publicationStatus && <span className="text-xs text-gray-500">{ev.publicationStatus==='draft'?'草稿':ev.publicationStatus==='pending'?'待发布':'已发布'}</span>}
@@ -742,10 +758,10 @@ function ListPage({ onEnter }) {
   const [query,setQuery] = useState('');
   const filtered = EVENTS.filter(e=>e.title.includes(query) || String(e.displayId ?? e.id).includes(query) || String(e.id).includes(query));
   return (
-    <div className="pl-[18px] pr-[20px] pb-[40px]">
+    <div className="event-list-page pl-[18px] pr-[20px] pb-[40px]">
       <div className="pt-[34px] text-[18px] leading-[24px] text-[#606266]">赛事管理</div>
       <div className="flex items-center gap-4 mt-[34px]"><button onClick={()=>onEnter(  { id: Date.now(), title: "", type: "", status: "即将开始", publicationStatus: "draft", img: "", isNew: true })} className="h-[53px] w-[132px] bg-[#409eff] hover:bg-[#66b1ff] text-white rounded-[4px] text-[18px] font-medium">添加赛事</button><input aria-label="搜索赛事" placeholder="搜索赛事名称 / ID" value={query} onChange={e=>{setQuery(e.target.value);setPage(1)}} className="border rounded px-4 h-[53px] w-[300px]" /></div>
-      <div className="grid gap-x-[16px] gap-y-[24px] mt-[40px] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+      <div className="event-card-grid grid gap-x-[16px] gap-y-[24px] mt-[40px] grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
         {filtered.slice((page-1)*parseInt(size),page*parseInt(size)).map((ev) => <EventCard key={ev.id} ev={ev} onEnter={onEnter} />)}
         {!filtered.length && <p className="py-12 text-gray-400">没有匹配的赛事</p>}
       </div>
@@ -2649,7 +2665,7 @@ function App() {
   const enter = (ev) => { setView({ page: "detail", ev }); window.scrollTo(0, 0); };
 
   return (
-    <div className="min-w-[1280px] bg-white">
+    <div className="admin-app min-w-[1280px] bg-white">
       <Header onHome={goHome} user={user} onLogout={logout} activeModule={view.page==='module'?view.module:'赛事管理'} />
       <div className="bg-blue-50 px-4 py-2 flex justify-between items-center border-b border-blue-100">
         <span className="text-blue-600 text-sm"><i className="fas fa-info-circle mr-2"></i>赛事数据已连接云端；赛事详情、封面和手机预览可实时联动</span>
