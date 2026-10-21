@@ -402,7 +402,6 @@ function queueEventDataWrite(key, value) {
   }).catch(error => { setEventDataSyncState({ eventId, key, status: 'error', message: error.message || String(error) }); });
   eventDataWriteQueues.set(queueKey, next);
 }
-function retryPendingEventData() { for (const item of eventDataPendingValues.values()) if (item.eventId === ACTIVE_EVENT_DATA_ID) queueEventDataWrite(item.key, item.value); }
 function isAppDataKey(key) { const value=String(key||''); return value==='backend-members'||value.startsWith('shop-')||value.startsWith('workspace-'); }
 function queueAppDataWrite(key,value) {
   const queueKey=String(key||'');
