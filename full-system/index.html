@@ -336,6 +336,10 @@ main.event-info-single-card .form-col .mt-\[2px\]{font-size:16px;line-height:1.6
 @media(max-width:1199px){.event-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:899px){.event-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:639px){.event-card-grid{grid-template-columns:minmax(0,1fr)}}
+/* The reference capture is a 2560px-class desktop view rendered from a
+   2048px layout canvas. Scale the complete admin UI, then size its canvas so
+   the enlarged app still exactly fits the browser viewport. */
+@media(min-width:2400px){.admin-app{width:80vw;min-width:0!important;min-height:80dvh;zoom:1.25}}
 </style>
 </head>
 <body>
