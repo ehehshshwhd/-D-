@@ -12,3 +12,5 @@
 !score-review-web/event-template-cover.jpg
 !score-review-web/event-assets/
 !score-review-web/event-assets/*.jpg
+!full-system/
+!full-system/**

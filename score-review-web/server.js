@@ -8,6 +8,12 @@ const { isValidEventId, validateEventId } = require('./event-id')
 const HOST = process.env.SCORE_REVIEW_HOST || '0.0.0.0'
 const PORT = Number(process.env.SCORE_REVIEW_PORT || process.env.PORT || 4173)
 const WEB_ROOT = __dirname
+// In the container server.js is copied to /app beside full-system/. During
+// local development it is still under score-review-web/, so support both
+// layouts without changing the deployed URL structure.
+const FULL_SYSTEM_ROOT = fs.existsSync(path.resolve(WEB_ROOT, 'full-system'))
+  ? path.resolve(WEB_ROOT, 'full-system')
+  : path.resolve(WEB_ROOT, '..', 'full-system')
 const DATA_FILE = process.env.SCORE_REVIEW_DATA || path.join(WEB_ROOT, 'server-data.json')
 const WEB_PASSWORD = process.env.SCORE_REVIEW_PASSWORD
 const SESSION_SECRET = process.env.SCORE_REVIEW_SESSION_SECRET || (process.env.NODE_ENV === 'production' ? '' : crypto.randomBytes(32).toString('hex'))
@@ -51,7 +57,27 @@ function applyCors(req, res) {
   }
 }
 function serve(res, urlPath) {
-  const requested = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '')
+  const normalizedPath = urlPath.replace(/^\/+/, '')
+  // The migrated full system is the only web UI. The former score-review
+  // dashboard remains as API code but is deliberately not exposed as a page.
+  const requestedPath = urlPath === '/' || urlPath === '/index.html'
+    ? 'full-system/index.html'
+    : normalizedPath
+  const isFullSystem = requestedPath === 'full-system' || requestedPath.startsWith('full-system/')
+  if (isFullSystem) {
+    const relative = requestedPath.slice('full-system'.length).replace(/^\/+/, '') || 'index.html'
+    const file = path.resolve(FULL_SYSTEM_ROOT, relative)
+    if (!file.startsWith(FULL_SYSTEM_ROOT + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) return send(res, 404, { ok: false, message: '页面不存在' })
+    const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' }
+    let data = fs.readFileSync(file)
+    if (path.basename(file) === 'index.html' && process.env.SCORE_REVIEW_FULL_SYSTEM_API_BASE === 'same-origin') {
+      const html = data.toString('utf8')
+      data = Buffer.from(html.replace('<script type="text/babel">', '<script>window.RACE_API_SAME_ORIGIN=true;</script><script type="text/babel">'))
+    }
+    res.writeHead(200, { 'Content-Type': types[path.extname(file).toLowerCase()] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-store' }); res.end(data)
+    return
+  }
+  const requested = requestedPath
   const templateCover = requested === 'event-template-cover.jpg'
     ? (fs.existsSync(path.join(WEB_ROOT, requested)) ? path.join(WEB_ROOT, requested) : path.resolve(WEB_ROOT, '..', 'racing-app', 'assets', 'events', 'event2-poster-crop.jpg'))
     : null
