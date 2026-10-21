@@ -377,7 +377,9 @@ const eventDataWriteQueues = new Map();
 const eventDataPendingValues = new Map();
 function isEventDataKey(key, eventId = ACTIVE_EVENT_DATA_ID) {
   const value = String(key || ''); const id = String(eventId || '');
-  return Boolean(id && value.includes(id) && (/^(groups-|timing-|race-ops-|signup-|match-work-|comment-|race-rounds-|score-review(?:-settings|-published)?-|notice-|news-|penalty-|(?:registration|scrutineering|grid|round|timing|comment|notice|news)-)/.test(value) || value.endsWith(`-${id}`)));
+  // Group settings already sync through /api/events; exclude this local cache from generic event-data writes.
+  if (value.startsWith('groups-')) return false;
+  return Boolean(id && value.includes(id) && (/^(timing-|race-ops-|signup-|match-work-|comment-|race-rounds-|score-review(?:-settings|-published)?-|notice-|news-|penalty-|(?:registration|scrutineering|grid|round|timing|comment|notice|news)-)/.test(value) || value.endsWith(`-${id}`)));
 }
 function setEventDataSyncState(detail) { window.dispatchEvent(new CustomEvent('event-data-sync', { detail })); }
 function queueEventDataWrite(key, value) {
