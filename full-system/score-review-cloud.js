@@ -17,7 +17,31 @@
       : null
   }
 
+  function parseClock(value) {
+    const match = String(value ?? '').trim().match(/^(\d{1,2}):([0-5]\d):([0-5]\d)(?:\.(\d{1,3}))?$/)
+    if (!match || Number(match[1]) > 23) return null
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]) + Number(`0.${(match[4] || '').padEnd(3, '0')}`)
+  }
+
+  function durationFromClocks(start, finish) {
+    const startSeconds = parseClock(start)
+    const finishSeconds = parseClock(finish)
+    if (startSeconds === null || finishSeconds === null) return null
+    let duration = finishSeconds - startSeconds
+    if (duration < 0) duration += 24 * 60 * 60
+    return Math.round(duration * 1000) / 1000
+  }
+
+  function stageDurationSeconds(row) {
+    if (!row) return null
+    const numeric = row.time !== '' && row.time != null && Number.isFinite(Number(row.time)) && Number(row.time) >= 0 ? Number(row.time) : null
+    const stored = numeric ?? parseDuration(row.time) ?? parseDuration(row.segmentDuration || row.duration)
+    if (row.durationManual === true) return stored
+    return durationFromClocks(row.startAt ?? row.startTime ?? row.start, row.finishAt ?? row.endTime ?? row.finish) ?? stored
+  }
+
   function formatDuration(seconds) {
+    if (seconds == null || seconds === '') return ''
     const value = Number(seconds)
     if (!Number.isFinite(value) || value < 0) return ''
     const ms = Math.round(value * 1000)
@@ -29,8 +53,7 @@
 
   function fromCloudRow(row, stage, meta = {}) {
     const storedTime = row && (row.segmentDuration || row.duration || row.totalDuration)
-    const parsedTime = parseDuration(storedTime)
-    const numericTime = Number(row && row.time)
+    const numericTime = row && row.time !== '' && row.time != null && Number.isFinite(Number(row.time)) ? Number(row.time) : null
     const rawPenalty = row && (row.penaltyTotal ?? row.penalty)
     const penaltyNumber = Number(rawPenalty)
     const rawStatus = String(row && row.status || 'pending').toLowerCase()
@@ -42,7 +65,7 @@
       stage: String(stage || row && row.stage || 'SS1').toUpperCase(),
       startAt: String(row && (row.startTime || row.start) || ''),
       finishAt: String(row && (row.endTime || row.finish) || ''),
-      time: parsedTime !== null ? parsedTime : Number.isFinite(numericTime) ? numericTime : null,
+      time: stageDurationSeconds({ ...row, time: parseDuration(storedTime) ?? numericTime }),
       penalty: Number.isFinite(penaltyNumber) ? penaltyNumber : String(rawPenalty ?? '0'),
       uploader: String(row && row.uploader || meta.updatedByPhone || '云端工作人员'),
       uploadedAt: String(row && row.uploadedAt || meta.updatedAt || ''),
@@ -55,10 +78,10 @@
 
   function toCloudRow(row) {
     const number = canonicalCarNumber(row && (row.number || row.carNumber))
-    const time = Number(row && row.time)
+    const time = stageDurationSeconds(row)
     const status = cloudStatus[String(row && row.status || '')] || 'pending'
     const penalty = row && row.penalty != null ? String(row.penalty) : '0'
-    const duration = Number.isFinite(time) && time >= 0 ? formatDuration(time) : ''
+    const duration = time !== null ? formatDuration(time) : ''
     return {
       ...(row && typeof row === 'object' ? row : {}),
       id: String(row && row.id || `score-${String(row && row.stage || 'SS1').toUpperCase()}-${number}`),
@@ -73,7 +96,7 @@
       penaltyTotal: penalty,
       segmentDuration: duration,
       totalDuration: duration,
-      durationManual: true,
+      durationManual: row && row.durationManual === true,
       uploader: String(row && row.uploader || ''),
       uploadedAt: String(row && row.uploadedAt || ''),
       status,
@@ -163,5 +186,5 @@
     })
   }
 
-  return { canonicalCarNumber, parseDuration, formatDuration, fromCloudRow, toCloudRow, checkConnection, loadRows, saveStage, publish }
+  return { canonicalCarNumber, parseDuration, formatDuration, durationFromClocks, stageDurationSeconds, fromCloudRow, toCloudRow, checkConnection, loadRows, saveStage, publish }
 })
