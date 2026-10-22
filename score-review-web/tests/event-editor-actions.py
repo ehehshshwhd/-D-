@@ -134,6 +134,60 @@ class EditorActions(unittest.TestCase):
         self.page.keyboard.press('Escape')
         self.assertEqual(self.save()['detailPageHtml'], EVENT['detailPageHtml'])
 
+    def test_legacy_paragraphs_align_to_editor_and_survive_save_and_preview(self):
+        # Migrated phone-preview paragraphs retain their old measured pixel width.
+        self.event['detailPageHtml'] = '''
+            <div class="mini-preview-copy mini-preview-generic-copy content-align-left"
+                 style="width:1023px;max-width:100%;text-align:center;white-space:pre-wrap"><b>勘路</b></div>
+            <div class="mini-preview-copy mini-preview-generic-copy"
+                 style="width:1023px;max-width:100%;text-align:center">媒介试车</div>
+            <h4 style="text-align:center">赛车巡游</h4>
+            <h4 style="text-align:center">开幕式</h4>
+            <p style="width:240px">独立定宽内容</p>
+            <table><tbody><tr><td>表格单元格</td><td>另一列</td></tr></tbody></table>'''
+        self.page.set_viewport_size(dict(width=1920, height=1080))
+        self.page.reload(wait_until='networkidle')
+        editor = self.page.locator('[data-editor]')
+
+        def alignment_offsets(container):
+            return container.evaluate('''root=>{
+                const box=root.getBoundingClientRect(),css=getComputedStyle(root);
+                const left=box.left+parseFloat(css.borderLeftWidth)+parseFloat(css.paddingLeft);
+                const right=box.right-parseFloat(css.borderRightWidth)-parseFloat(css.paddingRight);
+                return [...root.querySelectorAll('.mini-preview-copy,h4')].map(el=>{
+                    const range=document.createRange();range.selectNodeContents(el);
+                    const rect=range.getBoundingClientRect();
+                    return Math.abs((rect.left+rect.right-left-right)/2);
+                });
+            }''')
+
+        self.assertLess(max(alignment_offsets(editor)), 2,
+                        '旧文字块和标题应使用同一个中心，不能按旧的 1023px 宽度居中')
+        for label, expected in [('左对齐', 'left'), ('居中', 'center'), ('右对齐', 'right'), ('居中', 'center')]:
+            editor.evaluate('''root=>{
+                const range=document.createRange();
+                range.setStart(root.querySelector('.mini-preview-copy').firstChild,0);
+                const last=root.querySelectorAll('h4')[1].lastChild;
+                range.setEnd(last,last.textContent.length);
+                const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+                root.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
+            }''')
+            self.button(label).click()
+            self.assertEqual(editor.locator('.mini-preview-copy,h4').evaluate_all(
+                'nodes=>nodes.map(el=>getComputedStyle(el).textAlign)'), [expected] * 4)
+        self.assertLess(max(alignment_offsets(editor)), 2)
+        self.assertEqual(editor.locator('p').evaluate('el=>el.style.width'), '240px')
+        self.assertEqual(editor.locator('td').all_text_contents(), ['表格单元格', '另一列'])
+        self.assertEqual(editor.locator('b').inner_text(), '勘路')
+        self.button('手机预览').click()
+        content = self.page.get_by_role('dialog', name='赛事手机预览').locator('.race-phone-content')
+        self.assertLess(max(alignment_offsets(content)), 2)
+        self.page.keyboard.press('Escape')
+        saved = self.save()['detailPageHtml']
+        self.assertNotIn('1023px', saved)
+        self.page.reload(wait_until='networkidle')
+        self.assertLess(max(alignment_offsets(editor)), 2)
+
     def test_reset_restores_cover_and_editor_mode(self):
         self.page.locator('input[type=file][accept="image/*"]').set_input_files(
             dict(name='new-cover.png', mimeType='image/png', buffer=PNG))
