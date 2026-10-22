@@ -8,6 +8,8 @@ const { test } = require('node:test')
 
 test('score exports keep car and penalty widths, set remaining columns to 12.12, and center SS1-SS20', () => {
   const source = fs.readFileSync(path.join(__dirname, '../../full-system/score-review-export.js'), 'utf8')
+  const page = fs.readFileSync(path.join(__dirname, '../../full-system/index.html'), 'utf8')
+  assert.match(page, /stages=Array\.from\(\{length:20\}/)
   const context = { window: {} }
   vm.runInNewContext(source, context)
   const appended = []
