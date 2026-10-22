@@ -1269,7 +1269,6 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
             <div className="race-phone-divider" />
             <section className="race-phone-section">
               <h2>{preview.sectionTitles?.detail || '赛事详情'}</h2>
-              {preview.cover && <img className="race-phone-cover" src={preview.cover} alt="赛事封面" />}
               <div className="race-phone-content" dangerouslySetInnerHTML={{ __html: preview.content || '' }} />
             </section>
           </div>
