@@ -14,7 +14,7 @@ import openpyxl
 source = (ROOT / 'full-system' / 'index.html').read_text(encoding='utf-8')
 source = source.replace(
     'ReactDOM.createRoot(document.getElementById("root")).render(<App />);',
-    'ReactDOM.createRoot(document.getElementById("root")).render(<ScoreReview ev={{id:"timing-test"}} />);'
+    'ReactDOM.createRoot(document.getElementById("root")).render(<div className="admin-app min-w-[1280px] bg-white"><Header onHome={()=>{}} user={{name:"测试管理员"}} onLogout={()=>{}} activeModule="赛事管理"/><DetailPage ev={{id:"timing-test",title:"测试赛事"}} onHome={()=>{}} /></div>);'
 )
 rows = [{
     'id': 'record-23', 'carNumber': '23', 'group': '公开组',
@@ -24,6 +24,7 @@ rows = [{
     'uploadedAt': '2026-10-22T02:00:00.000Z'
 }]
 revisions = {f'SS{i}': 0 for i in range(1, 21)}
+stress_by_stage = {}
 
 
 def mock_cloud(route):
@@ -37,6 +38,8 @@ def mock_cloud(route):
         payload = dict(ok=True, cloudEnabled=True, cloudDatabaseConnected=True)
     elif parsed.path == '/api/session':
         payload = dict(ok=True)
+    elif parsed.path == '/api/event-data':
+        payload = dict(ok=True, items={}, storage='cloudbase')
     elif parsed.path == '/api/work-records':
         if route.request.method == 'PUT':
             body = route.request.post_data_json
@@ -48,7 +51,7 @@ def mock_cloud(route):
             revisions[stage] += 1
         else:
             stage = parse_qs(parsed.query)['stage'][0]
-        selected = rows if stage == 'SS1' else []
+        selected = stress_by_stage.get(stage, rows if stage == 'SS1' else [])
         payload = dict(ok=True, rows=selected, count=len(selected), revision=revisions[stage])
     else:
         return route.fulfill(status=404, body='not found')
@@ -63,6 +66,7 @@ with sync_playwright() as p:
     page.route('http://race-timing.test/**', mock_cloud)
     page.add_init_script('window.RACE_API_SAME_ORIGIN=true;')
     page.goto('http://race-timing.test/', wait_until='networkidle', timeout=60000)
+    page.locator('aside').get_by_text('成绩审核', exact=True).click()
     page.get_by_role('tab', name='总成绩', exact=True).wait_for(timeout=30000)
     page.get_by_text('已连接云端', exact=True).wait_for()
     assert page.locator('tbody tr').first.locator('td').nth(3).inner_text() == '0:02:58.270'
@@ -70,9 +74,15 @@ with sync_playwright() as p:
     cells = page.locator('tbody tr').first.locator('td')
     assert cells.nth(6).inner_text() == '0:02:58.270'
     assert cells.nth(5).inner_text() == '0'
+    page.get_by_role('button', name='全屏').click()
+    page.wait_for_function("getComputedStyle(document.querySelector('.score-review')).position === 'fixed'", timeout=1500)
+    fullscreen = page.locator('.score-review').evaluate('el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}}')
+    assert fullscreen == dict(x=0, y=0, width=1500, height=1000), fullscreen
+    page.keyboard.press('Escape')
+    page.wait_for_function("getComputedStyle(document.querySelector('.score-review')).position !== 'fixed'", timeout=1500)
     for index in [0, 3, 4, 6]:
         style = cells.nth(index).evaluate('el=>({bg:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color})')
-        assert style == dict(bg='rgb(255, 247, 237)', color='rgb(234, 88, 12)'), (index, style)
+        assert style == dict(bg='rgba(0, 0, 0, 0)', color='rgb(234, 88, 12)'), (index, style)
 
     page.get_by_role('button', name='编辑', exact=True).click()
     dialog = page.get_by_role('dialog', name='编辑成绩')
@@ -112,6 +122,39 @@ with sync_playwright() as p:
         assert workbook['SS1']['E2'].value == '0:03:00.001'
         assert workbook['SS1']['E2'].alignment.horizontal == 'center'
         assert len(workbook.sheetnames) == 21
+
+    for stage in revisions:
+        stress_by_stage[stage] = [{**rows[0], 'id': f'{stage}-{car}', 'carNumber': str(car)} for car in range(1, 201)]
+    page.get_by_role('button', name='刷新数据', exact=True).click()
+    page.get_by_text('共 4000 条成绩记录', exact=False).wait_for()
+    page.set_viewport_size(dict(width=1280, height=800))
+    page.get_by_role('button', name='全屏').click()
+    table_view = page.locator('table').locator('..')
+    measurements = table_view.evaluate('''el => {
+        el.scrollTop = el.scrollHeight;
+        el.scrollLeft = el.scrollWidth;
+        const rect = el.getBoundingClientRect();
+        const header = el.querySelector('th').getBoundingClientRect();
+        const last = el.querySelector('tbody tr:last-child').getBoundingClientRect();
+        return {height:el.clientHeight, width:el.clientWidth, total:el.scrollHeight,
+                scrollTop:el.scrollTop, scrollLeft:el.scrollLeft, top:rect.top,
+                bottom:rect.bottom, lastBottom:last.bottom, headerTop:header.top};
+    }''')
+    assert measurements['height'] >= 100, measurements
+    assert measurements['bottom'] <= 800, measurements
+    assert measurements['scrollTop'] > 0 and measurements['scrollLeft'] > 0, measurements
+    assert measurements['lastBottom'] <= measurements['bottom'] + 2, measurements
+    assert abs(measurements['headerTop'] - measurements['top']) < 2, measurements
+    assert page.locator('tbody tr').count() == 200
+    assert page.get_by_role('columnheader', name='SS20赛段用时').count() == 1
+    for label in ['退出全屏', '刷新数据']:
+        button = page.get_by_role('button', name=label, exact=True)
+        box = button.bounding_box()
+        assert box['y'] >= 0 and box['y'] + box['height'] <= 800, (label, box)
+        button.click(trial=True)
+    page.get_by_role('button', name='退出全屏', exact=True).click()
+    page.wait_for_function("getComputedStyle(document.querySelector('.score-review')).position !== 'fixed'")
+    print(json.dumps(measurements))
     assert not errors, errors
     browser.close()
-    print('PASS: orange cells, calculated preview, invalid input, manual save/refresh, total and 21-sheet Excel export')
+    print('PASS: orange text without fill, fullscreen enter/button/escape, 4000 records at 1280x800 with internal scrolling, timing edits and 21-sheet export')
