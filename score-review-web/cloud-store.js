@@ -249,6 +249,7 @@ function cleanEvent(input, id) {
     scoringType: 'rally',
     rankingMode: 'total',
     registrationEnabled: source.registrationEnabled === true,
+    hideSignupCount: source.hideSignupCount === true,
     workBackendEnabled: source.workBackendEnabled !== false,
     published: source.published !== false,
     templateEventId: source.templateEventId ? validateEventId(source.templateEventId) : '',
@@ -260,6 +261,7 @@ function cleanEvent(input, id) {
 
 function validateEventInput(input) {
   const source = input && typeof input === 'object' && !Array.isArray(input) ? input : {}
+  if (source.hideSignupCount != null && typeof source.hideSignupCount !== 'boolean') throw new Error('隐藏报名人数必须是布尔值')
   const allowedBlockTypes = new Set(['heading', 'paragraph', 'text', 'note', 'image', 'banner', 'divider', 'list', 'table'])
   const checkTextType = (value, label) => {
     if (value != null && !['string', 'number'].includes(typeof value)) throw new Error(`${label}必须是文字或数字，不能自动转换后保存`)

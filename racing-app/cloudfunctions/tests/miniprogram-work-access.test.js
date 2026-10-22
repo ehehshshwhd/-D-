@@ -266,6 +266,35 @@ function detailPage(user) {
   return harness
 }
 
+test('published event can hide every signup count while retaining fees, units and notes', async () => {
+  const { page, state } = detailPage(null)
+  const event = {
+    id: 'event-new', title: '测试赛事', hideSignupCount: true,
+    signupOptions: [
+      { name: '四驱组', fee: '3000', unit: '辆', registeredCount: 12, note: '含保险' },
+      { name: '女子组', fee: '600', unit: '人', registeredCount: 3 },
+      { name: '公开组', fee: '1000', unit: '车', registeredCount: 5, note: '已报5辆' }
+    ]
+  }
+  state.events = [event]
+  for (const hidden of [true, false, undefined]) {
+    event.hideSignupCount = hidden
+    page.loadPublishedEvent(event.id)
+    await tick()
+    await tick()
+    assert.equal(page.data.eventCloudReady, true)
+    const text = Array.from(page.data.event.signupOptions, item => item.displayText)
+    assert.equal(text.some(value => value.includes('已报')), hidden !== true)
+    assert.ok(text[0].includes('四驱组 ¥ 3000/辆'))
+    assert.ok(text[0].includes('（含保险）'))
+    assert.ok(text[1].includes('女子组 ¥ 600/人'))
+    if (hidden !== true) {
+      assert.ok(text[0].includes('（已报12辆）'))
+      assert.ok(text[1].includes('（已报3人）'))
+    }
+  }
+})
+
 test('new-event entry displays only for authorized staff/admin, including SS20', async () => {
   const cases = [
     [null, false], [{ role: 'user' }, false],

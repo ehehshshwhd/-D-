@@ -577,6 +577,7 @@ function cloudEventToEditorEvent(source) {
     id: String(event.id || ''),
     title: String(event.title || ''),
     type: String(event.type || ''),
+    hideSignupCount: event.hideSignupCount === true,
     tag: String(event.level || event.tag || ''),
     status: String(event.status || '即将开始'),
     img: String(event.coverFileId && API_URL ? `${API_URL}/api/event-covers?fileId=${encodeURIComponent(event.coverFileId)}` : (event.coverUrl || event.img || '')),
@@ -599,7 +600,7 @@ function assignEventDisplayIds(events) {
 }
 function editorEventToCloudEvent(event, fields, dates, content) {
   const form = fields || {};
-  return { ...(event && typeof event === 'object' ? event : {}), id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
+  return { ...(event && typeof event === 'object' ? event : {}), id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), hideSignupCount: form.hideSignupCount === true, detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
 }
 async function loadRemoteEvents() {
   if (!API_URL) return false;
@@ -1241,11 +1242,8 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
     ['举办城市：', preview.city || '']
   ].filter(([, value]) => String(value || '').trim());
   return <div className="fixed inset-0 z-[10002] bg-black/80 flex flex-col items-center justify-center p-3 sm:p-5" onClick={onClose}>
-    <section role="dialog" aria-modal="true" aria-label="赛事手机预览" onClick={event => event.stopPropagation()} className="w-full max-w-[560px] min-h-0 flex flex-col items-center gap-3">
-      <header className="w-full flex items-center justify-between rounded-xl bg-white px-4 py-3 shadow-lg">
-        <div><h2 className="font-bold text-lg text-gray-900">手机预览</h2><p className="text-xs text-gray-500 mt-1">展示当前编辑内容，无需保存</p></div>
-        <button type="button" aria-label="关闭手机预览" onClick={onClose} className="px-3 py-2 text-2xl leading-none text-gray-500 hover:text-gray-900">×</button>
-      </header>
+    <section role="dialog" aria-modal="true" aria-label="赛事手机预览" onClick={event => event.stopPropagation()} className="relative w-full max-w-[560px] min-h-0 flex flex-col items-center gap-3">
+      <button type="button" aria-label="关闭手机预览" onClick={onClose} className="absolute -right-2 -top-2 z-10 h-9 w-9 rounded-full bg-white text-2xl text-gray-600 shadow">×</button>
       <div className="relative min-h-0 max-w-full shrink-0 overflow-hidden" style={{ height: 844 * scale, width: 390 * scale }}>
         <div className="race-phone-preview absolute left-0 top-0" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           <div className="race-phone-status"><span>10:07</span><span aria-hidden="true">◔ ▭</span></div>
@@ -1264,7 +1262,7 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
                 const unit = String(option.unit || option.报名单位 || '人').trim().replace(/^车$/, '辆');
                 const fee = /\/(?:辆|车|人)\s*$/.test(rawFee) ? rawFee : `${rawFee}/${unit}`;
                 const note = String(option.note || option.报名备注 || '').trim();
-                return <div className="race-phone-signup-row" key={`${name}-${index}`}><strong>{name}</strong>　¥ {fee}{note && `（${note}）`} <span>(已报<span style={{ color: '#f90' }}>0</span>{unit === '辆' ? '辆' : unit})</span></div>;
+                return <div className="race-phone-signup-row" key={`${name}-${index}`}><strong>{name}</strong>　¥ {fee}{note && !/^已报\s*\d+/.test(note) && `（${note}）`}{!preview.hideSignupCount && <> <span>(已报<span style={{ color: '#f90' }}>0</span>{unit === '辆' ? '辆' : unit})</span></>}</div>;
               })}</div>
               <div className="race-phone-actions"><button type="button">{preview.sectionTitles?.results || '查看赛事详情'}</button><button type="button">查看报名列表</button></div>
             </section>}
@@ -1299,6 +1297,7 @@ function InfoTab({ ev, onHome }) {
     address: ev.isNew ? "" : (ev.form?.address || "蓝天国际赛车场"),
     sponsor: ev.isNew ? "" : (ev.form?.sponsor || ""),
     ...(ev.isNew ? {} : (ev.form || {})),
+    hideSignupCount: !ev.isNew && ev.hideSignupCount === true,
   });
   const levelOf=e=>e.form?.level||e.tag||'';
   const parentCandidates=EVENTS.filter(e=>e.id!==ev.id && levelOf(e)===(f.level==='周赛'?'月赛':f.level==='月赛'?'年赛':'__none'));
@@ -1311,7 +1310,7 @@ function InfoTab({ ev, onHome }) {
   const [phonePreview,setPhonePreview]=useState(null);
   const [previewScale,setPreviewScale]=useState(1);
   useEffect(()=>{const fit=()=>setPreviewScale(Math.max(0.1,Math.min(1,(window.innerWidth-40)/390,(window.innerHeight-150)/844)));fit();window.addEventListener('resize',fit);return()=>window.removeEventListener('resize',fit)},[]);
-  const buildPhonePreview=()=>{const doc=new DOMParser().parseFromString(editorContent||'','text/html');doc.querySelectorAll('script,iframe,object,embed,style,link,meta,base').forEach(n=>n.remove());doc.body.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src|xlink:href)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value))||(/^style$/i.test(a.name)&&/(?:expression\s*\(|javascript\s*:)/i.test(a.value)))n.removeAttribute(a.name)}));const savedGroups=store('groups-'+ev.id,[]);const signupOptions=Array.isArray(ev.signupOptions)&&ev.signupOptions.length?ev.signupOptions:savedGroups.filter(g=>g&&g['开启报名']==='是'&&g['是否显示']==='是').map(g=>({name:g.名称,fee:g.报名费,unit:g.报名单位||'人',note:g.报名备注||''}));const notices=store('notice-'+ev.id,[]).filter(n=>n&&(!n['状态']||['已发布','显示','正常'].includes(n['状态'])));const dates=Object.fromEntries([...document.querySelectorAll('[data-date]')].map(el=>[el.dataset.date,el.value]));const eventDates=String(ev.form?.dateRange||ev.dateRange||'').trim();return {title:f.title||'未填写赛事标题',city:f.city,contact:f.contact,phone:f.phone,wechat:f.wechat,address:f.address,cover:cover||'',content:doc.body.innerHTML,dates:{...dates,display:ev.form?.displayDate||ev.displayDate||eventDates||[dates.start,dates.end].filter(Boolean).join(' 至 ')},status:ev.status||'报名中',views:ev.views||ev.viewCount||0,likes:ev.likes||ev.likeCount||0,comments:ev.comments||ev.commentCount||0,shares:ev.shares||ev.shareCount||0,sectionTitles:ev.form?.sectionTitles||ev.sectionTitles||{},signupOptions,notices};};
+  const buildPhonePreview=()=>{const doc=new DOMParser().parseFromString(editorContent||'','text/html');doc.querySelectorAll('script,iframe,object,embed,style,link,meta,base').forEach(n=>n.remove());doc.body.querySelectorAll('*').forEach(n=>[...n.attributes].forEach(a=>{if(/^on/i.test(a.name)||(/^(href|src|xlink:href)$/i.test(a.name)&&/^\s*javascript:/i.test(a.value))||(/^style$/i.test(a.name)&&/(?:expression\s*\(|javascript\s*:)/i.test(a.value)))n.removeAttribute(a.name)}));const savedGroups=store('groups-'+ev.id,[]);const signupOptions=Array.isArray(ev.signupOptions)&&ev.signupOptions.length?ev.signupOptions:savedGroups.filter(g=>g&&g['开启报名']==='是'&&g['是否显示']==='是').map(g=>({name:g.名称,fee:g.报名费,unit:g.报名单位||'人',note:g.报名备注||''}));const notices=store('notice-'+ev.id,[]).filter(n=>n&&(!n['状态']||['已发布','显示','正常'].includes(n['状态'])));const dates=Object.fromEntries([...document.querySelectorAll('[data-date]')].map(el=>[el.dataset.date,el.value]));const eventDates=String(ev.form?.dateRange||ev.dateRange||'').trim();return {title:f.title||'未填写赛事标题',city:f.city,contact:f.contact,phone:f.phone,wechat:f.wechat,address:f.address,cover:cover||'',content:doc.body.innerHTML,dates:{...dates,display:ev.form?.displayDate||ev.displayDate||eventDates||[dates.start,dates.end].filter(Boolean).join(' 至 ')},status:ev.status||'报名中',views:ev.views||ev.viewCount||0,likes:ev.likes||ev.likeCount||0,comments:ev.comments||ev.commentCount||0,shares:ev.shares||ev.shareCount||0,sectionTitles:ev.form?.sectionTitles||ev.sectionTitles||{},signupOptions,notices,hideSignupCount:f.hideSignupCount===true};};
   const openPhonePreview=()=>setPhonePreview(buildPhonePreview());
   useEffect(()=>{if(phonePreview)setPhonePreview(buildPhonePreview())},[f,cover,editorContent]);
   useEffect(()=>{if(!phonePreview)return;const close=e=>{if(e.key==='Escape')setPhonePreview(null)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[phonePreview]);
@@ -1328,7 +1327,7 @@ function InfoTab({ ev, onHome }) {
     const content=editorContent||editor?.innerHTML||'';
     try {
       if(API_URL) await saveEditorEvent(ev,{...f,parentId:parent?.id||null},dates,content,publish,coverFileId);
-      else {Object.assign(ev,{publicationStatus:publish?'pending':'draft',publicationRequestedAt:publish?new Date().toISOString():null,parentId:parent?.id||null,tag:f.level||undefined,title:f.title,type:f.type,form:f,img:cover,dates,content});delete ev.isNew;const nextEvents=[ev,...EVENTS.filter(e=>String(e.id)!==String(ev.id))];EVENTS=nextEvents;persist();}
+      else {Object.assign(ev,{publicationStatus:publish?'pending':'draft',publicationRequestedAt:publish?new Date().toISOString():null,parentId:parent?.id||null,tag:f.level||undefined,title:f.title,type:f.type,hideSignupCount:f.hideSignupCount===true,form:f,img:cover,dates,content});delete ev.isNew;const nextEvents=[ev,...EVENTS.filter(e=>String(e.id)!==String(ev.id))];EVENTS=nextEvents;persist();}
     } catch(error) { alert(`赛事保存失败：${error.message||error}`); return; }
     alert(publish?'赛事已保存并发布到云端。':'赛事草稿已保存到云端。');
     onHome();
@@ -1345,7 +1344,7 @@ function InfoTab({ ev, onHome }) {
         <Section title="基础信息" />
         <Row>
           <Col span={8} sm={24}><Field label="赛事标题" required><TextInput value={f.title} onChange={set("title")} max={120} placeholder="请输入赛事标题" /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="赛事类型" help="可留空继承父级"><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
+          <Col span={8} sm={12}><Field auto label="赛事类型" help={<><span>可留空继承父级</span><label className="mt-3 flex items-center gap-2 cursor-pointer"><input type="checkbox" className="h-4 w-4 accent-[#409eff]" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></>}><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
           <Col span={8} sm={12}><Field auto label="举办城市"><CityPicker value={f.city} onChange={set("city")} /></Field></Col>
         </Row>
 

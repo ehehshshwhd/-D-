@@ -261,7 +261,7 @@ function normalizeContentBlocks(value) {
   return withoutStage01Banner
 }
 
-function normalizeSignupOptions(value) {
+function normalizeSignupOptions(value, hideSignupCount = false) {
   if (!Array.isArray(value)) return []
   if (value.length > 100) throw new Error('报名选项超过 100 项，拒绝不完整显示')
   if (value.some(item => !item || typeof item !== 'object' || Array.isArray(item))) throw new Error('报名选项格式无效')
@@ -274,7 +274,7 @@ function normalizeSignupOptions(value) {
     const fee = feeAmount && !/\/(?:辆|人)(?:\s|$)/.test(feeAmount) ? `${feeAmount}/${feeUnit}` : feeAmount
     const note = String(item.note || '').trim()
     const registeredCount = Number.isFinite(Number(item.registeredCount)) && Number(item.registeredCount) >= 0 ? Math.floor(Number(item.registeredCount)) : 0
-    const countNote = `（已报${registeredCount}${feeUnit}）`
+    const countNote = hideSignupCount === true ? '' : `（已报${registeredCount}${feeUnit}）`
     return {
       ...item,
       displayText: `${name}${fee ? ` ${fee}` : ''}${countNote}${note && !/^已报\s*\d+/.test(note) ? `（${note}）` : ''}`
@@ -398,7 +398,8 @@ Page({
         contactPhone: String(record.contactPhone || ''),
         contactWechat: String(record.contactWechat || ''),
         registrationNote: String(record.registrationNote || ''),
-        signupOptions: normalizeSignupOptions(record.signupOptions),
+        signupOptions: normalizeSignupOptions(record.signupOptions, record.hideSignupCount),
+        hideSignupCount: record.hideSignupCount === true,
         registrationEnabled: record.registrationEnabled === true,
         workBackendEnabled: record.workBackendEnabled !== false,
         groups: Array.isArray(record.groups) ? record.groups : [],
