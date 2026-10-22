@@ -33,6 +33,7 @@ class EditorActions(unittest.TestCase):
         cls.playwright.stop()
 
     def setUp(self):
+        self.event = dict(EVENT)
         self.requests = []
         self.errors = []
         self.fail_next = False
@@ -64,7 +65,7 @@ class EditorActions(unittest.TestCase):
     def mock_cloud(self, route):
         path = urlparse(route.request.url).path
         if path == '/':
-            render = 'EVENTS=[cloudEventToEditorEvent(' + json.dumps(EVENT, ensure_ascii=False) + ''')];
+            render = 'EVENTS=[cloudEventToEditorEvent(' + json.dumps(self.event, ensure_ascii=False) + ''')];
                 ReactDOM.createRoot(document.getElementById("root")).render(
                   <div className="admin-app min-w-[1280px] bg-white">
                     <Header user={{name:'测试管理员'}} activeModule="赛事管理" onHome={()=>{}} />
@@ -85,8 +86,9 @@ class EditorActions(unittest.TestCase):
                 if self.fail_next:
                     self.fail_next = False
                     return route.fulfill(status=503, json=dict(ok=False, message='测试云端暂不可用'))
-                return route.fulfill(json=dict(ok=True, event={**EVENT, **payload}))
-            return route.fulfill(json=dict(ok=True, events=[EVENT]))
+                self.event = {**self.event, **payload}
+                return route.fulfill(json=dict(ok=True, event=self.event))
+            return route.fulfill(json=dict(ok=True, events=[self.event]))
         if path == '/api/event-data':
             return route.fulfill(json=dict(ok=True, items={}, storage='cloudbase'))
         if path == '/api/health':
@@ -186,6 +188,44 @@ class EditorActions(unittest.TestCase):
         self.button('删除赛事').click()
         self.page.wait_for_function('window.returnedHome===1')
         self.assertEqual(self.requests[-1], ('DELETE', dict(eventId=EVENT['id'])))
+
+    def test_registration_checkbox_position_size_reset_and_cloud_round_trip(self):
+        checkbox = self.page.get_by_role('checkbox', name='开启报名', exact=True)
+        checkbox.wait_for(timeout=5000)
+        self.assertFalse(checkbox.is_checked())
+        city_field = self.page.get_by_text('举办城市', exact=True).locator('..')
+        city_control = city_field.locator(':scope > div > div').first.bounding_box()
+        box = checkbox.bounding_box()
+        self.assertGreaterEqual(box['y'], city_control['y'] + city_control['height'])
+        hidden_box = self.page.get_by_role('checkbox', name='隐藏报名人数').bounding_box()
+        self.assertEqual(box['width'], hidden_box['width'])
+        self.assertEqual(box['height'], hidden_box['height'])
+        self.assertLessEqual(box['height'], 20)
+        checkbox.check()
+        self.button('重置').click()
+        self.assertFalse(checkbox.is_checked())
+        checkbox.check()
+        saved = self.save()
+        self.assertIs(saved['registrationEnabled'], True)
+        self.page.reload(wait_until='networkidle')
+        self.assertTrue(checkbox.is_checked())
+        checkbox.uncheck()
+        saved = self.save(publish=True)
+        self.assertIs(saved['registrationEnabled'], False)
+        self.page.reload(wait_until='networkidle')
+        self.assertFalse(checkbox.is_checked())
+
+    def test_group_save_preserves_event_registration_switch(self):
+        self.event['groups'] = ['四驱组']
+        self.event['signupOptions'] = [dict(name='四驱组', fee='3000', unit='车')]
+        for enabled in [False, True]:
+            self.event['registrationEnabled'] = enabled
+            self.page.reload(wait_until='networkidle')
+            self.page.get_by_text('组别管理', exact=True).click()
+            self.button('编辑').click()
+            self.button('提交并返回').click()
+            self.page.wait_for_function("document.body.innerText.includes('已同步到云端，小程序将显示')")
+            self.assertIs(self.requests[-1][1]['registrationEnabled'], enabled)
 
 
 if __name__ == '__main__':
