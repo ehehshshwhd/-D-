@@ -12,6 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/react@18.0.0/umd/react.development.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/react-dom@18.0.0/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+<script src="score-review-cloud.js"></script>
 <style>
   html, body { margin: 0; padding: 0; background: #fff; }
   /* Hide only the browser page scrollbar; wheel and trackpad scrolling remain enabled. */
@@ -229,9 +230,12 @@ main .text-gray-400,main .text-gray-500{color:#596579!important}
 /* Use plain native text rendering without glow or stroke. */
 #root,#root *{text-shadow:none!important;-webkit-text-stroke:0!important}
 body{text-rendering:auto;-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
-main > .score-review.review-fullscreen,main .score-review .results-fullscreen{position:fixed!important;inset:0!important;z-index:1000!important;width:100vw!important;height:100dvh!important;margin:0!important;padding:32px!important;overflow:auto!important;background:#fff!important;border-radius:0!important}
+main > .score-review.review-fullscreen{position:fixed!important;inset:0!important;z-index:1000!important;width:100vw!important;height:100dvh!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;margin:0!important;padding:32px!important;overflow:hidden!important;background:#fff!important;border-radius:0!important;display:flex!important;flex-direction:column!important}
 main .score-review .fixed{z-index:1100}
-@media(max-width:760px){main > .score-review.review-fullscreen,main .score-review .results-fullscreen{padding:18px!important}}
+main > .score-review.review-fullscreen > .bg-white.rounded-xl.border{flex:1 1 0%;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden!important}
+main > .score-review.review-fullscreen > .bg-white.rounded-xl.border > .overflow-auto{flex:1 1 0%;min-width:0;min-height:0;max-width:100%;max-height:none!important;overflow:auto!important;overscroll-behavior:contain}
+main .score-review > .bg-white.rounded-xl.border > .overflow-auto > table{width:max-content;min-width:100%}
+@media(max-width:760px){main > .score-review.review-fullscreen{padding:18px!important}}
 /* Flat review workspace — scoped to 成绩审核 only. */
 main > .score-review.bg-slate-50{background:#fff;border:0;border-radius:0;padding:32px;box-shadow:none}
 main .score-review > .flex.flex-wrap.gap-3.mb-5{background:transparent;border:0;border-radius:0;padding:0 0 26px;margin-bottom:0;box-shadow:none;border-bottom:1px solid #e8edf3;gap:14px}
@@ -448,6 +452,8 @@ function isEventDataKey(key, eventId = ACTIVE_EVENT_DATA_ID) {
   const value = String(key || ''); const id = String(eventId || '');
   // Group settings already sync through /api/events; exclude this local cache from generic event-data writes.
   if (value.startsWith('groups-')) return false;
+  // Score rows and published snapshots use the shared work-records APIs instead.
+  if (id && (value === `score-review-${id}` || value === `score-review-published-${id}` || value === `score-review-cache-backup-${id}`)) return false;
   return Boolean(id && value.includes(id) && (/^(timing-|race-ops-|signup-|match-work-|comment-|race-rounds-|score-review(?:-settings|-published)?-|notice-|news-|penalty-|(?:registration|scrutineering|grid|round|timing|comment|notice|news)-)/.test(value) || value.endsWith(`-${id}`)));
 }
 function setEventDataSyncState(detail) { window.dispatchEvent(new CustomEvent('event-data-sync', { detail })); }
@@ -1189,7 +1195,7 @@ function CityPicker({ value, onChange }) {
   return (
     <div className="flex gap-2 items-center">
       <div className="relative flex-1" ref={quickRef}>
-        <div 
+        <div
           onClick={() => setShowQuick(!showQuick)}
           className={`bg-white border rounded-[4px] flex items-center cursor-pointer h-[54px] px-[21px] pr-[16px] ${showQuick ? "border-[#409eff]" : "border-[#dcdfe6] hover:border-[#c0c4cc]"}`}
         >
@@ -1703,7 +1709,7 @@ function SignupManager({ev}) {
               } catch (err) { setError(err.message) }
             }
           }} className="bg-[#f0f2f5] rounded-xl shadow-2xl w-[1100px] max-w-full max-h-[95vh] overflow-hidden flex flex-col">
-            
+
             <div className="bg-white px-8 py-4 flex justify-between items-center border-b shrink-0">
               <h2 className="text-2xl font-bold">{draft ? (viewOnly ? '查看报名' : '报名信息') : batch ? '批量导入' : '参赛回合'}</h2>
               <button type="button" onClick={() => { setDraft(null); setBatch(null); setRoundEntry(null); }} className="text-3xl text-gray-400 hover:text-gray-600">×</button>
@@ -1802,7 +1808,7 @@ function MatchManager({ev}) {
   const total = r => Number(r.time) + Number(r.penalty || 0);
   const valid = r => r.status === '完赛' && r.time !== '' && Number.isFinite(total(r));
   const rank = r => valid(r) ? 1 + state.rows.filter(x => valid(x) && total(x) < total(r)).length : '—';
-  
+
   const format = s => {
     if (s === '' || s == null) return '—';
     const num = Number(s);
@@ -1816,19 +1822,19 @@ function MatchManager({ev}) {
     const entries = store('signup-' + ev.id, []).filter(r => r.组别 === group);
     if (!entries.length) { setNotice('当前组别暂无报名，请先在报名管理添加车手'); return; }
     const ids = new Set(state.rows.map(r => r.entryId));
-    save({ rows: [...state.rows, ...entries.filter(r => !ids.has(r.id)).map(r => ({ 
-      id: crypto.randomUUID(), 
-      entryId: r.id, 
-      number: r.赛号, 
-      driver: r.姓名, 
+    save({ rows: [...state.rows, ...entries.filter(r => !ids.has(r.id)).map(r => ({
+      id: crypto.randomUUID(),
+      entryId: r.id,
+      number: r.赛号,
+      driver: r.姓名,
       codriver: r.领航员姓名 || '',
-      team: r.车队 || '', 
+      team: r.车队 || '',
       checkTime: '--',
       startTime: '1',
-      time: '', 
-      penalty: 0, 
-      reward: 0, 
-      status: '待比赛' 
+      time: '',
+      penalty: 0,
+      reward: 0,
+      status: '待比赛'
     }))], startOpen: true });
   };
 
@@ -2086,7 +2092,7 @@ function ContentManager({ label, storageKey, fields, ev }) {
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       <div className="mb-4">
-        <button onClick={() => setDraft(Object.fromEntries(fields.map(f => [f, ''])))} 
+        <button onClick={() => setDraft(Object.fromEntries(fields.map(f => [f, ''])))}
                 className="h-[53px] px-8 bg-[#409eff] text-white rounded font-medium text-[18px]">
           添加{label.replace('管理', '')}
         </button>
@@ -2140,7 +2146,7 @@ function ContentManager({ label, storageKey, fields, ev }) {
 
       {draft && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <form className="bg-white rounded-lg shadow-xl w-[600px] p-7 max-h-[90vh] overflow-auto" 
+          <form className="bg-white rounded-lg shadow-xl w-[600px] p-7 max-h-[90vh] overflow-auto"
                 onSubmit={e => {
                   e.preventDefault();
                   const next = [...rows];
@@ -2155,7 +2161,7 @@ function ContentManager({ label, storageKey, fields, ev }) {
               {fields.map(f => (
                 <label key={f} className="block">
                   <span className="text-sm text-gray-600">{f}</span>
-                  {f.includes('内容') ? 
+                  {f.includes('内容') ?
                     <textarea rows="5" className="mt-1 w-full border rounded p-3" value={draft[f]} onChange={e => setDraft({...draft, [f]: e.target.value})} /> :
                     <input className="mt-1 w-full border rounded p-3" value={draft[f]} onChange={e => setDraft({...draft, [f]: e.target.value})} />
                   }
@@ -2187,7 +2193,7 @@ function LegacyDynamicManager({ ev }) {
   return (
     <div className="flex-1 flex flex-col p-6 overflow-hidden">
       <div className="mb-4">
-        <button onClick={() => setDraft({ 标题: '', 内容: '', 发布人: '', 时间: new Date().toLocaleString() })} 
+        <button onClick={() => setDraft({ 标题: '', 内容: '', 发布人: '', 时间: new Date().toLocaleString() })}
                 className="h-[53px] px-8 bg-[#409eff] text-white rounded font-medium text-[18px]">
           添加动态
         </button>
@@ -2247,7 +2253,7 @@ function LegacyDynamicManager({ ev }) {
 
       {draft && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <form className="bg-white rounded-lg shadow-xl w-[600px] p-7 max-h-[90vh] overflow-auto" 
+          <form className="bg-white rounded-lg shadow-xl w-[600px] p-7 max-h-[90vh] overflow-auto"
                 onSubmit={e => {
                   e.preventDefault();
                   const next = [...rows];
@@ -2294,11 +2300,14 @@ function ScoreReview({ev, onHome}) {
  const [fullscreen,setFullscreen]=useState(null);
  useEffect(()=>{const close=e=>{if(e.key==='Escape')setFullscreen(null)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[]);
  const fullscreenButton=area=><button type="button" aria-label={fullscreen===area?'退出全屏':'全屏显示'} title="Esc 退出全屏" onClick={()=>setFullscreen(fullscreen===area?null:area)} className="px-3 py-2 border border-gray-300 bg-white text-gray-700 text-sm"><i className={'fas fa-'+(fullscreen===area?'compress':'expand')+' mr-2'}/>{fullscreen===area?'退出全屏':'全屏'}</button>;
- const eventId=String(ev.id); const [rows,setRows]=useState([]),[stage,setStage]=useState('总成绩'),[status,setStatus]=useState('全部'),[query,setQuery]=useState(''),[exportStage,setExportStage]=useState('最佳成绩'),[message,setMessage]=useState(''),[settings,setSettings]=useState(null),[draft,setDraft]=useState(null);
+ const eventId=String(ev.id); const [rows,setRows]=useState([]),[stage,setStage]=useState('总成绩'),[status,setStatus]=useState('全部'),[query,setQuery]=useState(''),[exportStage,setExportStage]=useState('最佳成绩'),[message,setMessage]=useState(''),[settings,setSettings]=useState(null),[draft,setDraft]=useState(null),[cloud,setCloud]=useState({status:'loading',error:''});
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(''),5000);return()=>clearTimeout(timer)},[message]);
- const upload=useRef();const key='score-review-'+eventId,configKey='score-review-settings-'+eventId;
- useEffect(()=>{setRows(store(key,[]));setStage('总成绩');setMessage('')},[eventId]);
- const save=next=>{try{saveStore(key,next);setRows(next);return true}catch{setMessage('保存失败，请检查存储空间');return false}};
+ const upload=useRef(),rowsRef=useRef(rows),cloudRef=useRef({eventId:'',revisions:{},requestId:0,saveQueue:Promise.resolve(),connected:false,loading:false}),key='score-review-'+eventId,configKey='score-review-settings-'+eventId;
+ const replaceRows=next=>{rowsRef.current=next;setRows(next)};
+ const loadCloudData=async()=>{const state=cloudRef.current,requestId=++state.requestId;state.eventId=eventId;state.connected=false;state.loading=true;setCloud({status:'loading',error:''});try{const snapshot=await window.ScoreReviewCloud.loadRows({fetcher:(url,options)=>fetch(url,options),apiUrl:API_URL,eventId});if(state.requestId!==requestId||state.eventId!==eventId)return;const localRows=store(key,[]),merged=[...snapshot.rows],seen=new Set(merged.map(row=>row.stage+'|'+window.ScoreReviewCloud.canonicalCarNumber(row.number))),pending=new Map();let skipped=0;for(const local of Array.isArray(localRows)?localRows:[]){const number=window.ScoreReviewCloud.canonicalCarNumber(local&&local.number),stageNumber=normalizedStage(local&&local.stage),targetStage='SS'+stageNumber;if(!number||stageNumber<1||stageNumber>20){skipped++;continue}const identity=targetStage+'|'+number;if(seen.has(identity)){skipped++;continue}seen.add(identity);const target=pending.get(targetStage)||[];target.push({...local,number,stage:targetStage});pending.set(targetStage,target)}if(localRows.length)try{saveStore('score-review-cache-backup-'+eventId,localRows)}catch{}let migrated=0;for(const [targetStage,additions] of pending){if(snapshot.rows.filter(row=>row.stage===targetStage).length+additions.length>1000)throw new Error(`${targetStage} 本机成绩超过云端单赛段 1000 条限制，已保留本机数据，请拆分后再同步`);const stageRows=[...merged.filter(row=>row.stage===targetStage),...additions],revision=await window.ScoreReviewCloud.saveStage({fetcher:(url,options)=>fetch(url,options),apiUrl:API_URL,eventId,stage:targetStage,rows:stageRows,expectedRevision:snapshot.revisions[targetStage]});snapshot.revisions[targetStage]=revision;merged.splice(0,merged.length,...merged.filter(row=>row.stage!==targetStage),...additions);migrated+=additions.length}if(state.requestId!==requestId||state.eventId!==eventId)return;state.revisions=snapshot.revisions;state.connected=true;state.loading=false;state.saveQueue=Promise.resolve();replaceRows(merged);try{saveStore(key,merged)}catch{setMessage('云端已连接，但本机缓存空间不足；成绩仍已从云端读取')}setCloud({status:'connected',error:''});if(migrated||skipped)setMessage(`云端已连接，读取 ${merged.length} 条成绩${migrated?'，补传本机未上传 '+migrated+' 条':''}${skipped?'；'+skipped+' 条重复或无效的本机记录已备份':''}`)}catch(error){if(state.requestId!==requestId||state.eventId!==eventId)return;state.connected=false;state.loading=false;setCloud({status:'error',error:error.message||String(error)});setMessage('本机缓存已保留，云端连接或同步失败：'+(error.message||error))}};
+ useEffect(()=>{const local=store(key,[]);rowsRef.current=local;setRows(local);setStage('总成绩');setMessage('');cloudRef.current.saveQueue=Promise.resolve();loadCloudData();return()=>{cloudRef.current.requestId++}},[eventId]);
+ const refreshCloud=()=>{const state=cloudRef.current;state.saveQueue=state.saveQueue.catch(()=>{}).then(loadCloudData)};
+ const save=next=>{const state=cloudRef.current;if(state.loading){setMessage('正在读取云端成绩，请稍候再操作');return false}const previous=rowsRef.current;try{saveStore(key,next);replaceRows(next)}catch{setMessage('保存失败，请检查存储空间');return false}if(state.eventId!==eventId||!state.connected){setMessage('已保存在本机；云端未连接，连接后可重试同步');return true}const touched=[...new Set([...previous,...next].map(row=>normalizedStage(row.stage)).filter(value=>value>=1&&value<=20).map(value=>'SS'+value))].filter(targetStage=>JSON.stringify(previous.filter(row=>row.stage===targetStage).map(window.ScoreReviewCloud.toCloudRow))!==JSON.stringify(next.filter(row=>row.stage===targetStage).map(window.ScoreReviewCloud.toCloudRow)));if(!touched.length)return true;setCloud({status:'saving',error:''});const task=state.saveQueue.catch(()=>{}).then(async()=>{if(!state.connected||state.eventId!==eventId)throw new Error('云端连接已中断，请刷新后重试');for(const targetStage of touched){const revision=await window.ScoreReviewCloud.saveStage({fetcher:(url,options)=>fetch(url,options),apiUrl:API_URL,eventId,stage:targetStage,rows:next.filter(row=>row.stage===targetStage),expectedRevision:state.revisions[targetStage]});state.revisions[targetStage]=revision}if(state.eventId===eventId){setCloud({status:'connected',error:''});setMessage('成绩已保存并同步到赛事云端')}});state.saveQueue=task;task.catch(error=>{if(state.eventId===eventId){state.connected=false;setCloud({status:'error',error:error.message||String(error)});setMessage('本机已保存，但云端同步失败：'+(error.message||error))}});return true};
  const config=store(configKey,{}),groups=store('groups-'+eventId,[]),stages=['总成绩',...Array.from({length:20},(_,i)=>'SS'+(i+1))];
   const normalizedStage=value=>{const match=String(value||'').trim().toUpperCase().match(/^(?:SS|第)?(\d+)/);return match?Number(match[1]):0};
   const durationMs=value=>{const seconds=Number(value);return Number.isFinite(seconds)&&seconds>=0?Math.round(seconds*1000):null};
@@ -2315,9 +2324,9 @@ function ScoreReview({ev, onHome}) {
   const visible=rows.filter(r=>(stage==='总成绩'||r.stage===stage)&&(status==='全部'||r.status===status)&&(!query||(String(r.number)+' '+String(r.uploader||'')).toLowerCase().includes(query.toLowerCase())));
   const exportRows=(selectedType=exportStage)=>{if(!rows.length){setMessage('当前赛事暂无成绩可导出');return}if(!window.XLSX){setMessage('Excel 导出组件尚未加载，请刷新页面后重试');return}const entries=carRecords(),last=entries.reduce((last,item)=>Math.max(last,...item.records.keys().map(s=>normalizedStage(s))),0),stages=Array.from({length:last},(_,i)=>'SS'+(i+1));const bestRows=[['车号',...stages,'有效成绩'],...entries.map(item=>{const values=stages.map(s=>item.records.get(s)?item.records.get(s)._durationMs:undefined),valid=values.filter(v=>v!==undefined&&v!==null),best=valid.length?Math.min(...valid):null;return [item.number,...values.map(v=>v===undefined||v===null?'':formatDuration(v)),formatDuration(best)]})];const totalRows=selectedType==='最佳成绩'?bestRows:[['车号','总成绩',...stages],...entries.map(item=>{const values=stages.map(s=>item.records.get(s)?item.records.get(s)._durationMs:undefined),valid=values.filter(v=>v!==undefined&&v!==null),total=valid.length?valid.reduce((sum,v)=>sum+v,0):null;return [item.number,formatDuration(total),...values.map(v=>v===undefined||v===null?'':formatDuration(v))]})];const stageSheets=stages.map(s=>({name:s,rows:[['车号','发车时间','收车时间','罚时','赛段用时'],...entries.map(item=>{const r=item.records.get(s);return r?[item.number,r.startAt||'',r.finishAt||'',Number(r.penalty)?String(r.penalty)+'秒':'',formatDuration(r._durationMs)]:[item.number,'','','','']})]}));const workbook=XLSX.utils.book_new();[{name:'总成绩',rows:totalRows},...stageSheets].forEach(sheet=>XLSX.utils.book_append_sheet(workbook,XLSX.utils.aoa_to_sheet(sheet.rows),sheet.name));XLSX.writeFile(workbook,`成绩表-${selectedType}.xlsx`);setMessage(`已导出${selectedType}工作簿（总成绩表及 ${stages.length} 个赛段表）`)};
  const importFile=async file=>{if(!file)return;try{if(!window.XLSX)throw Error('导入组件尚未加载，请稍后重试');const book=XLSX.read(await file.arrayBuffer(),{type:'array'});const data=XLSX.utils.sheet_to_json(book.Sheets[book.SheetNames[0]],{defval:'',raw:false});if(!data.length)throw Error('文件为空');const incoming=data.map((r,i)=>{const number=String(r['车号']||'').trim(),group=String(r['组别']||'').trim(),s=String(r['赛段']||'SS1').trim(),time=Number(r['用时（秒）']),penalty=Number(r['罚时（秒）']||0);if(!number||!group||!/^SS([1-9]|1\d|20)$/.test(s)||r['用时（秒）']===''||!Number.isFinite(time)||time<0||!Number.isFinite(penalty)||penalty<0)throw Error('第 '+(i+2)+' 行数据不完整或时间、赛段无效');return {id:crypto.randomUUID(),number,group,stage:s,time,penalty,startAt:String(r['发车时间']||''),finishAt:String(r['收车时间']||''),uploader:String(r['上传人']||'管理员导入'),uploadedAt:String(r['上传时间']||new Date().toLocaleString()),status:'待审核'}});const seen=new Set(rows.map(r=>r.group+'|'+r.number+'|'+r.stage));incoming.forEach(r=>{const k=r.group+'|'+r.number+'|'+r.stage;if(seen.has(k))throw Error('车号 '+r.number+' 的 '+r.stage+' 成绩重复，请先编辑现有记录');seen.add(k)});if(save([...rows,...incoming]))setMessage('成功导入 '+incoming.length+' 条成绩，等待审核')}catch(e){setMessage('导入失败：'+e.message)}finally{upload.current.value=''}};
- const publish=()=>{const list=rows.filter(r=>r.status==='已通过'&&(config[r.group]||[]).includes(r.stage));if(!list.length){setMessage('没有符合组别发布赛段配置的已通过成绩');return;}if(confirm('发布 '+list.length+' 条已通过成绩的本地快照？')){saveStore('score-review-published-'+eventId,{publishedAt:new Date().toISOString(),rows:list});setMessage('发布快照已保存到赛事数据云端；该操作不会自动发布到小程序。')}};
+ const publish=async()=>{if(!cloudRef.current.connected){setMessage('云端未连接，暂不能发布成绩；请先重试连接');return}const list=rows.filter(r=>r.status==='已通过'&&(config[r.group]||[]).includes(r.stage));if(!list.length){setMessage('没有符合组别发布赛段配置的已通过成绩');return}if(!confirm('发布 '+list.length+' 条已通过成绩？发布后小程序将读取这次成绩快照。'))return;try{await cloudRef.current.saveQueue;const visibleGroups=Array.isArray(ev.visibleGroups)&&ev.visibleGroups.length?ev.visibleGroups:groups.map(group=>group.名称).filter(Boolean),groupStageNames=Object.fromEntries(groups.map(group=>[group.名称,config[group.名称]||[]]));const result=await window.ScoreReviewCloud.publish({fetcher:(url,options)=>fetch(url,options),apiUrl:API_URL,eventId,visibleGroups,groupStageNames});setMessage(`已发布 ${Number(result.rowCount)||list.length} 条成绩到小程序`)}catch(error){setCloud({status:'error',error:error.message||String(error)});setMessage('成绩发布失败：'+(error.message||error))}};
  const btn='px-4 py-2.5 rounded-lg border bg-white hover:border-blue-400 whitespace-nowrap text-sm';
- return <div className={'score-review flex-1 overflow-auto bg-slate-50 p-5'+(fullscreen==='review'?' review-fullscreen':'')}><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-6"><h2 className="text-2xl font-bold">成绩审核</h2></div>{fullscreenButton('review')}</div><p className="text-gray-500 text-sm mt-2 mb-5">汇总工作人员上传的赛段成绩，审核通过后按组别配置发布。</p><div className="flex flex-wrap gap-3 mb-5">          
+ return <div className={'score-review flex-1 min-w-0 min-h-0 overflow-auto bg-slate-50 p-5'+(fullscreen==='review'?' review-fullscreen':'')}><div className="flex items-center justify-between gap-4"><div className="flex items-center gap-6"><h2 className="text-2xl font-bold">成绩审核</h2></div>{fullscreenButton('review')}</div><p className="text-gray-500 text-sm mt-2 mb-5">汇总工作人员上传的赛段成绩，审核通过后按组别配置发布。</p><div className="flex flex-wrap gap-3 mb-5">
           <button className={btn+' text-red-500'} onClick={()=>{if(confirm('删除当前赛事的全部成绩及发布快照？赛事本身不会删除。')){if(save([])){saveStore('score-review-published-'+eventId,[]);setMessage('当前赛事成绩已删除')}}}}>删除赛事成绩</button>
 <button className={btn} onClick={()=>csv('成绩导入模板',[headers,['001','专业组','SS1','120.500','0','工作人员','','']])}>下载模板</button><button className={btn} onClick={()=>upload.current.click()}>导入 Excel/CSV</button><input hidden ref={upload} type="file" accept=".xlsx,.xls,.csv" onChange={e=>importFile(e.target.files[0])}/>              <button type="button" onClick={e=>{const menu=e.currentTarget.querySelector('[data-export-menu]');if(menu)menu.classList.toggle('hidden')}} className="bg-blue-500 text-white px-6 py-2.5 rounded-lg flex items-center gap-2 group relative">
                 <span>导出成绩</span>
@@ -2327,7 +2336,7 @@ function ScoreReview({ev, onHome}) {
                   <div onClick={() => { exportRows('总成绩'); }} className="px-4 py-2 hover:bg-gray-100 cursor-pointer">导出总成绩</div>
                 </div>
               </button>
-</div><div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">{[['当前记录',rows.length,'text-gray-900'],['待审核',rows.filter(r=>r.status==='待审核').length,'text-orange-500'],['已通过',rows.filter(r=>r.status==='已通过').length,'text-green-600']].map(([l,v,c])=><div key={l} className="bg-white border rounded-xl p-5"><p className="text-sm text-gray-500">● {l}</p><p className={'text-3xl font-bold mt-4 '+c}>{v}</p></div>)}</div>{message&&<div role="status" className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 text-blue-700 text-sm">{message}</div>}<div className={'bg-white rounded-xl border overflow-hidden'+(fullscreen==='results'?' results-fullscreen':'')}><div className="p-5 flex justify-between gap-4 flex-wrap"><div><h3 className="font-bold text-lg">赛事成绩</h3><p className="text-gray-500 text-sm mt-1">{rows.length?'共 '+rows.length+' 条成绩记录':'当前赛事暂无成绩'} · 未连接云端</p></div><div className="flex items-center gap-3">{fullscreenButton('results')}<button className={btn} onClick={()=>{setRows(store(key,[]));setMessage('数据已刷新')}}>刷新数据</button></div></div><div className="bg-slate-50 p-5 border-y"><div className="flex flex-wrap gap-3 items-center"><button className={btn} onClick={()=>setSettings(Object.fromEntries(groups.map(g=>[g.名称,(config[g.名称]||[]).join(',')])))}>组别发布赛段设置</button><button className={btn+' text-green-600'} onClick={()=>{const pending=rows.filter(r=>r.status==='待审核');if(!pending.length){setMessage('暂无待审核成绩');return;}if(confirm('通过全部 '+pending.length+' 条待审核成绩？'))save(rows.map(r=>r.status==='待审核'?{...r,status:'已通过'}:r))}}>一键通过全部成绩</button><button className="px-5 py-2.5 bg-blue-500 text-white rounded-lg text-sm" onClick={publish}>发布已通过成绩</button></div><p className="text-xs text-gray-500 mt-3">发布仅包含已通过且符合各组发布赛段配置的成绩。成绩审核设置和记录会同步云端；此快照不会自动推送小程序。</p></div><div className="flex overflow-x-auto border-b x-scroll" role="tablist" aria-label="成绩赛段" style={{paddingTop:12,paddingBottom:4}}>{stages.map(s=><button key={s} role="tab" aria-selected={stage===s} onClick={()=>setStage(s)} style={{minWidth:s==='总成绩'?120:96,fontSize:18,lineHeight:'28px',padding:'18px 24px',borderRadius:0,color:stage===s?'#007aff':s==='总成绩'?'#ff8500':'#6e6e73',borderBottom:stage===s?'3px solid #007aff':'3px solid transparent'}} className="shrink-0 whitespace-nowrap">{s}</button>)}</div><div className="p-4 flex flex-wrap justify-between gap-4"><div className="flex bg-gray-100 p-1 rounded-lg">{['全部','待审核','已通过','已退回'].map(s=><button key={s} onClick={()=>setStatus(s)} className={'px-3 py-2 rounded text-sm '+(status===s?'bg-white shadow-sm font-bold':'text-gray-500')}>{s}</button>)}</div><input aria-label="搜索车号或上传人" value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索车号或上传人" className="border rounded-lg px-4 py-2 max-w-full"/></div><div className="overflow-auto" style={{maxHeight:'min(560px, 60vh)',overscrollBehavior:'contain'}}><table className="w-full text-sm whitespace-nowrap text-left"><thead className="bg-slate-50 text-gray-500 sticky top-0 z-10"><tr>{(stage==='总成绩'?['车号','组别','罚时',...activeStages.map(s=>s+'赛段用时'),'上传人','上传时间','审核状态','操作']:['车号','组别','赛段','发车时间','收车时间','罚时','赛段用时','上传人','上传时间','审核状态','操作']).map(t=><th className="p-4" key={t}>{t}</th>)}</tr></thead><tbody>{(stage==='总成绩'?aggregateRows:visible).map(item=>{if(stage!=='总成绩')return <tr key={item.id} className="border-t">{[item.number,item.group,item.stage,item.startAt||'—',item.finishAt||'—',item.penalty,item.time,item.uploader,item.uploadedAt,item.status].map((v,i)=><td key={i} className="p-4">{v??'—'}</td>)}<td className="p-4"><div className="flex gap-3"><button className="text-blue-500" onClick={()=>openEditor(item)}>编辑</button><button className="text-green-600" onClick={()=>save(rows.map(x=>x.id===item.id?{...x,status:'已通过',reason:''}:x))}>通过</button><button className="text-orange-600" onClick={()=>{const reason=prompt('请输入退回原因');if(reason?.trim())save(rows.map(x=>x.id===item.id?{...x,status:'已退回',reason}:x))}}>退回</button><button className="text-red-500" onClick={()=>{if(confirm('删除此条成绩？'))save(rows.filter(x=>x.id!==item.id))}}>删除</button></div></td></tr>;const latest=item.latest||item.all[0]||{},penalty=item.all.reduce((sum,r)=>sum+(Number(r.penalty)||0),0),state=carStatus(item);return <tr key={item.number} className="border-t"><td className="p-4 font-bold">{item.number}</td><td className="p-4">{latest.group||'—'}</td><td className="p-4">{penalty?`+${penalty}`:'—'}</td>{activeStages.map(s=>{const r=item.records.get(s);return <td key={s} className="p-4 text-orange-500">{r&&r._durationMs!==null?formatDuration(r._durationMs):'—'}</td>})}<td className="p-4">{latest.uploader||'—'}</td><td className="p-4">{latest.uploadedAt||'—'}</td><td className={'p-4 '+(state==='已通过'?'text-green-600':state==='已退回'?'text-red-500':'text-orange-500')}>{state}</td><td className="p-4"><div className="flex gap-3"><button className="text-blue-500" onClick={()=>openEditor({...latest,number:item.number,group:latest.group||''},true)}>编辑</button>{state==='待审核'&&<button className="text-green-600" onClick={()=>save(rows.map(x=>item.all.some(r=>r.id===x.id)?{...x,status:'已通过',reason:''}:x))}>通过</button>}<button className="text-red-500" onClick={()=>{if(confirm('删除此车号的全部赛段成绩？'))save(rows.filter(x=>!item.all.some(r=>r.id===x.id)))}}>删除</button></div></td></tr>})}{!(stage==='总成绩'?aggregateRows:visible).length&&<tr><td colSpan={stage==='总成绩'?activeStages.length+7:11} className="p-16 text-center text-gray-400">暂无符合条件的成绩，请导入文件或调整筛选</td></tr>}</tbody></table></div></div>{settings&&<div className="fixed inset-0 bg-black/40 z-50 p-4 flex items-center justify-center"><form role="dialog" aria-modal="true" className="bg-white rounded-xl p-6 w-[520px] max-w-full max-h-[85vh] overflow-auto" onSubmit={e=>{e.preventDefault();const result={};for(const [g,s] of Object.entries(settings)){const list=s.split(/[,，\s]+/).filter(Boolean).map(x=>x.toUpperCase());if(list.some(x=>!/^SS([1-9]|1\d|20)$/.test(x))){alert('赛段格式应为 SS1 至 SS20');return;}result[g]=[...new Set(list)]}saveStore(configKey,result);setSettings(null)}}><h3 className="text-xl font-bold mb-5">组别发布赛段设置</h3><p className="text-sm text-gray-500 mb-4">输入赛段，用逗号分隔，例如 SS1,SS2；留空不发布该组。</p>{Object.entries(settings).map(([g,s])=><label className="block mb-4" key={g}>{g}<input value={s} onChange={e=>setSettings({...settings,[g]:e.target.value})} className="border rounded p-3 w-full mt-2"/></label>)}<div className="flex justify-end gap-3 mt-5"><button type="button" onClick={()=>setSettings(null)} className={btn}>取消</button><button className="bg-blue-500 text-white px-6 py-2 rounded">保存</button></div></form></div>}{draft&&<div className="fixed inset-0 z-50 bg-black/35" onMouseDown={e=>{if(e.target===e.currentTarget)setDraft(null)}}><form role="dialog" aria-modal="true" aria-label="编辑成绩" className="absolute right-0 top-0 h-full w-[min(820px,100vw)] bg-white shadow-2xl flex flex-col" onSubmit={e=>{e.preventDefault();saveEditor()}}><div className="h-[88px] shrink-0 border-b flex items-center justify-between px-8"><h3 className="text-2xl font-bold">编辑成绩</h3><button type="button" onClick={()=>setDraft(null)} aria-label="关闭" className="w-12 h-12 rounded-full bg-gray-100 text-3xl text-gray-500">×</button></div><div className="flex-1 overflow-auto p-8"><div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5"><label className="block text-gray-500">车号<input value={draft.number||''} readOnly className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900 bg-gray-50"/></label><label className="block text-gray-500">赛段<select value={draft.stage||'SS1'} onChange={e=>{const target=rows.find(r=>String(r.number)===String(draft.number)&&r.stage===e.target.value);if(target)setDraft({...target,_aggregate:draft._aggregate,group:draft.group,editDuration:formatDuration(durationMs(target.time)),status:target.status||'待审核',reason:target.reason||''})}} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900">{[...new Set(rows.filter(r=>String(r.number)===String(draft.number)).map(r=>r.stage).filter(Boolean))].sort((a,b)=>normalizedStage(a)-normalizedStage(b)).map(s=><option key={s}>{s}</option>)}</select></label><label className="block sm:col-span-2 text-gray-500">参赛组别（修改后同步该车全部赛段）<select value={draft.group||''} onChange={e=>setDraft({...draft,group:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"><option value="">未分组</option>{[...new Set([...groups.map(g=>g.名称),draft.group].filter(Boolean))].map(g=><option key={g}>{g}</option>)}</select></label><label className="block text-gray-500">发车时间<input value={draft.startAt||''} onChange={e=>setDraft({...draft,startAt:e.target.value})} placeholder="12:34:14.14" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">收车时间<input value={draft.finishAt||''} onChange={e=>setDraft({...draft,finishAt:e.target.value})} placeholder="12:37:12.41" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">罚时（秒）<input type="number" min="0" step="0.001" value={draft.penalty??0} onChange={e=>setDraft({...draft,penalty:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">赛段用时（可直接修改）<input required value={draft.editDuration||''} onChange={e=>setDraft({...draft,editDuration:e.target.value})} placeholder="0:02:58.270" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">审核状态<select value={draft.status||'待审核'} onChange={e=>setDraft({...draft,status:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900">{['待审核','已通过','已退回'].map(s=><option key={s}>{s}</option>)}</select></label><label className="block sm:col-span-2 text-gray-500">退回说明（可选）<input value={draft.reason||''} onChange={e=>setDraft({...draft,reason:e.target.value})} placeholder="例如：请核对收车时间" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label></div><div className="mt-6 p-5 rounded-xl bg-gray-100 flex items-center justify-between"><span className="text-amber-700">赛段用时预览</span><strong className="text-2xl text-blue-600">{parseDuration(draft.editDuration)===null?'—':draft.editDuration}</strong></div></div><div className="shrink-0 border-t p-6 flex justify-end gap-3"><button type="button" onClick={()=>saveEditor('已退回')} className="border rounded-xl px-7 py-4 font-semibold">退回</button><button type="submit" className="border rounded-xl px-7 py-4 font-semibold">保存修改</button><button type="button" onClick={()=>saveEditor('已通过')} className="bg-blue-600 text-white rounded-xl px-7 py-4 font-semibold">保存并通过</button></div></form></div>}</div>
+</div><div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-5">{[['当前记录',rows.length,'text-gray-900'],['待审核',rows.filter(r=>r.status==='待审核').length,'text-orange-500'],['已通过',rows.filter(r=>r.status==='已通过').length,'text-green-600']].map(([l,v,c])=><div key={l} className="bg-white border rounded-xl p-5"><p className="text-sm text-gray-500">● {l}</p><p className={'text-3xl font-bold mt-4 '+c}>{v}</p></div>)}</div>{message&&<div role="status" className="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-4 text-blue-700 text-sm">{message}</div>}<div className="bg-white rounded-xl border overflow-hidden min-w-0"><div className="p-5 flex justify-between gap-4 flex-wrap"><div><h3 className="font-bold text-lg">赛事成绩</h3><p className="text-gray-500 text-sm mt-1">{rows.length?'共 '+rows.length+' 条成绩记录':'当前赛事暂无成绩'} · <span className={cloud.status==='connected'?'text-green-600':cloud.status==='saving'?'text-blue-600':cloud.status==='loading'?'text-gray-500':'text-orange-600'}>{cloud.status==='connected'?'已连接云端':cloud.status==='saving'?'正在同步云端…':cloud.status==='loading'?'正在连接云端…':'未连接云端'}</span></p>{cloud.error&&<p role="alert" className="text-orange-700 text-sm mt-2">{cloud.error} <button type="button" className="underline" onClick={refreshCloud}>重试连接</button></p>}</div><div className="flex items-center gap-3"><button className={btn} onClick={refreshCloud}>刷新数据</button></div></div><div className="bg-slate-50 p-5 border-y"><div className="flex flex-wrap gap-3 items-center"><button className={btn} onClick={()=>setSettings(Object.fromEntries(groups.map(g=>[g.名称,(config[g.名称]||[]).join(',')])))}>组别发布赛段设置</button><button className={btn+' text-green-600'} onClick={()=>{const pending=rows.filter(r=>r.status==='待审核');if(!pending.length){setMessage('暂无待审核成绩');return;}if(confirm('通过全部 '+pending.length+' 条待审核成绩？'))save(rows.map(r=>r.status==='待审核'?{...r,status:'已通过'}:r))}}>一键通过全部成绩</button><button className="px-5 py-2.5 bg-blue-500 text-white rounded-lg text-sm" onClick={publish}>发布已通过成绩</button></div><p className="text-xs text-gray-500 mt-3">成绩修改后自动保存到 CloudBase；发布后小程序读取最新的已通过成绩快照。</p></div><div className="flex overflow-x-auto border-b x-scroll" role="tablist" aria-label="成绩赛段" style={{paddingTop:12,paddingBottom:4}}>{stages.map(s=><button key={s} role="tab" aria-selected={stage===s} onClick={()=>setStage(s)} style={{minWidth:s==='总成绩'?120:96,fontSize:18,lineHeight:'28px',padding:'18px 24px',borderRadius:0,color:stage===s?'#007aff':s==='总成绩'?'#ff8500':'#6e6e73',borderBottom:stage===s?'3px solid #007aff':'3px solid transparent'}} className="shrink-0 whitespace-nowrap">{s}</button>)}</div><div className="p-4 flex flex-wrap justify-between gap-4"><div className="flex bg-gray-100 p-1 rounded-lg">{['全部','待审核','已通过','已退回'].map(s=><button key={s} onClick={()=>setStatus(s)} className={'px-3 py-2 rounded text-sm '+(status===s?'bg-white shadow-sm font-bold':'text-gray-500')}>{s}</button>)}</div><input aria-label="搜索车号或上传人" value={query} onChange={e=>setQuery(e.target.value)} placeholder="搜索车号或上传人" className="border rounded-lg px-4 py-2 max-w-full"/></div><div className="min-w-0 w-full overflow-auto" style={{maxHeight:'min(560px, 60vh)',overscrollBehavior:'contain'}}><table className="w-full min-w-max text-sm whitespace-nowrap text-left"><thead className="bg-slate-50 text-gray-500 sticky top-0 z-10"><tr>{(stage==='总成绩'?['车号','组别','罚时',...activeStages.map(s=>s+'赛段用时'),'上传人','上传时间','审核状态','操作']:['车号','组别','赛段','发车时间','收车时间','罚时','赛段用时','上传人','上传时间','审核状态','操作']).map(t=><th className="p-4" key={t}>{t}</th>)}</tr></thead><tbody>{(stage==='总成绩'?aggregateRows:visible).map(item=>{if(stage!=='总成绩')return <tr key={item.id} className="border-t">{[item.number,item.group,item.stage,item.startAt||'—',item.finishAt||'—',item.penalty,item.time,item.uploader,item.uploadedAt,item.status].map((v,i)=><td key={i} className="p-4">{v??'—'}</td>)}<td className="p-4"><div className="flex gap-3"><button className="text-blue-500" onClick={()=>openEditor(item)}>编辑</button><button className="text-green-600" onClick={()=>save(rows.map(x=>x.id===item.id?{...x,status:'已通过',reason:''}:x))}>通过</button><button className="text-orange-600" onClick={()=>{const reason=prompt('请输入退回原因');if(reason?.trim())save(rows.map(x=>x.id===item.id?{...x,status:'已退回',reason}:x))}}>退回</button><button className="text-red-500" onClick={()=>{if(confirm('删除此条成绩？'))save(rows.filter(x=>x.id!==item.id))}}>删除</button></div></td></tr>;const latest=item.latest||item.all[0]||{},penalty=item.all.reduce((sum,r)=>sum+(Number(r.penalty)||0),0),state=carStatus(item);return <tr key={item.number} className="border-t"><td className="p-4 font-bold">{item.number}</td><td className="p-4">{latest.group||'—'}</td><td className="p-4">{penalty?`+${penalty}`:'—'}</td>{activeStages.map(s=>{const r=item.records.get(s);return <td key={s} className="p-4 text-orange-500">{r&&r._durationMs!==null?formatDuration(r._durationMs):'—'}</td>})}<td className="p-4">{latest.uploader||'—'}</td><td className="p-4">{latest.uploadedAt||'—'}</td><td className={'p-4 '+(state==='已通过'?'text-green-600':state==='已退回'?'text-red-500':'text-orange-500')}>{state}</td><td className="p-4"><div className="flex gap-3"><button className="text-blue-500" onClick={()=>openEditor({...latest,number:item.number,group:latest.group||''},true)}>编辑</button>{state==='待审核'&&<button className="text-green-600" onClick={()=>save(rows.map(x=>item.all.some(r=>r.id===x.id)?{...x,status:'已通过',reason:''}:x))}>通过</button>}<button className="text-red-500" onClick={()=>{if(confirm('删除此车号的全部赛段成绩？'))save(rows.filter(x=>!item.all.some(r=>r.id===x.id)))}}>删除</button></div></td></tr>})}{!(stage==='总成绩'?aggregateRows:visible).length&&<tr><td colSpan={stage==='总成绩'?activeStages.length+7:11} className="p-16 text-center text-gray-400">暂无符合条件的成绩，请导入文件或调整筛选</td></tr>}</tbody></table></div></div>{settings&&<div className="fixed inset-0 bg-black/40 z-50 p-4 flex items-center justify-center"><form role="dialog" aria-modal="true" className="bg-white rounded-xl p-6 w-[520px] max-w-full max-h-[85vh] overflow-auto" onSubmit={e=>{e.preventDefault();const result={};for(const [g,s] of Object.entries(settings)){const list=s.split(/[,，\s]+/).filter(Boolean).map(x=>x.toUpperCase());if(list.some(x=>!/^SS([1-9]|1\d|20)$/.test(x))){alert('赛段格式应为 SS1 至 SS20');return;}result[g]=[...new Set(list)]}saveStore(configKey,result);setSettings(null)}}><h3 className="text-xl font-bold mb-5">组别发布赛段设置</h3><p className="text-sm text-gray-500 mb-4">输入赛段，用逗号分隔，例如 SS1,SS2；留空不发布该组。</p>{Object.entries(settings).map(([g,s])=><label className="block mb-4" key={g}>{g}<input value={s} onChange={e=>setSettings({...settings,[g]:e.target.value})} className="border rounded p-3 w-full mt-2"/></label>)}<div className="flex justify-end gap-3 mt-5"><button type="button" onClick={()=>setSettings(null)} className={btn}>取消</button><button className="bg-blue-500 text-white px-6 py-2 rounded">保存</button></div></form></div>}{draft&&<div className="fixed inset-0 z-50 bg-black/35" onMouseDown={e=>{if(e.target===e.currentTarget)setDraft(null)}}><form role="dialog" aria-modal="true" aria-label="编辑成绩" className="absolute right-0 top-0 h-full w-[min(820px,100vw)] bg-white shadow-2xl flex flex-col" onSubmit={e=>{e.preventDefault();saveEditor()}}><div className="h-[88px] shrink-0 border-b flex items-center justify-between px-8"><h3 className="text-2xl font-bold">编辑成绩</h3><button type="button" onClick={()=>setDraft(null)} aria-label="关闭" className="w-12 h-12 rounded-full bg-gray-100 text-3xl text-gray-500">×</button></div><div className="flex-1 overflow-auto p-8"><div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5"><label className="block text-gray-500">车号<input value={draft.number||''} readOnly className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900 bg-gray-50"/></label><label className="block text-gray-500">赛段<select value={draft.stage||'SS1'} onChange={e=>{const target=rows.find(r=>String(r.number)===String(draft.number)&&r.stage===e.target.value);if(target)setDraft({...target,_aggregate:draft._aggregate,group:draft.group,editDuration:formatDuration(durationMs(target.time)),status:target.status||'待审核',reason:target.reason||''})}} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900">{[...new Set(rows.filter(r=>String(r.number)===String(draft.number)).map(r=>r.stage).filter(Boolean))].sort((a,b)=>normalizedStage(a)-normalizedStage(b)).map(s=><option key={s}>{s}</option>)}</select></label><label className="block sm:col-span-2 text-gray-500">参赛组别（修改后同步该车全部赛段）<select value={draft.group||''} onChange={e=>setDraft({...draft,group:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"><option value="">未分组</option>{[...new Set([...groups.map(g=>g.名称),draft.group].filter(Boolean))].map(g=><option key={g}>{g}</option>)}</select></label><label className="block text-gray-500">发车时间<input value={draft.startAt||''} onChange={e=>setDraft({...draft,startAt:e.target.value})} placeholder="12:34:14.14" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">收车时间<input value={draft.finishAt||''} onChange={e=>setDraft({...draft,finishAt:e.target.value})} placeholder="12:37:12.41" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">罚时（秒）<input type="number" min="0" step="0.001" value={draft.penalty??0} onChange={e=>setDraft({...draft,penalty:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">赛段用时（可直接修改）<input required value={draft.editDuration||''} onChange={e=>setDraft({...draft,editDuration:e.target.value})} placeholder="0:02:58.270" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label><label className="block text-gray-500">审核状态<select value={draft.status||'待审核'} onChange={e=>setDraft({...draft,status:e.target.value})} className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900">{['待审核','已通过','已退回'].map(s=><option key={s}>{s}</option>)}</select></label><label className="block sm:col-span-2 text-gray-500">退回说明（可选）<input value={draft.reason||''} onChange={e=>setDraft({...draft,reason:e.target.value})} placeholder="例如：请核对收车时间" className="border rounded-xl px-5 h-[68px] w-full mt-2 text-xl text-gray-900"/></label></div><div className="mt-6 p-5 rounded-xl bg-gray-100 flex items-center justify-between"><span className="text-amber-700">赛段用时预览</span><strong className="text-2xl text-blue-600">{parseDuration(draft.editDuration)===null?'—':draft.editDuration}</strong></div></div><div className="shrink-0 border-t p-6 flex justify-end gap-3"><button type="button" onClick={()=>saveEditor('已退回')} className="border rounded-xl px-7 py-4 font-semibold">退回</button><button type="submit" className="border rounded-xl px-7 py-4 font-semibold">保存修改</button><button type="button" onClick={()=>saveEditor('已通过')} className="bg-blue-600 text-white rounded-xl px-7 py-4 font-semibold">保存并通过</button></div></form></div>}</div>
 }
 function DetailPage({ ev, onHome }) {
   const [tab, setTab] = useState("info");
@@ -2566,9 +2575,9 @@ function OrderManagerWorkspace({ ev }) {
   const [activeTab, setActiveTab] = useState(0);
   const [conditions, setConditions] = useState([]);
   const [field, setField] = useState('');
-  
+
   const fields = ['所属企业', '所属店铺', '订单号', '购买人', '商品金额', '快递费', '总金额', '支付金额', '支付方式', '支付状态', '订单状态', '获得赛币', '下单时间', '支付时间'];
-  
+
   const defaults = [
     { id: '1', 所属企业: '赛车视界', 所属店铺: '赛车视界官方直营店', 订单号: '202601261311188372', 购买人: '马银鹏', 商品金额: 1158, 快递费: '--', 总金额: 1158, 支付金额: 1158, 支付方式: '微信支付', 支付状态: '未支付', 订单状态: '待付款', 获得赛币: 1590, 下单时间: '2026-01-26 13:11:18', 支付时间: '--' },
     { id: '2', 所属企业: '赛车视界', 所属店铺: '赛车视界官方直营店', 订单号: '202601162351518958', 购买人: '马银鹏', 商品金额: 1000, 快递费: '--', 总金额: 1000, 支付金额: 1000, 支付方式: '微信支付', 支付状态: '支付超时', 订单状态: '待付款', 获得赛币: 20, 下单时间: '2026-01-16 23:51:51', 支付时间: '--' }
@@ -2591,7 +2600,7 @@ function OrderManagerWorkspace({ ev }) {
           <button onClick={() => field && setConditions([...conditions, { id: Date.now(), field, value: '' }])} className="border border-blue-200 text-blue-500 px-6 py-2.5 rounded hover:bg-blue-50">添加条件</button>
           <button className="bg-blue-300 text-white px-8 py-2.5 rounded">查询</button>
         </div>
-        
+
         <div className="overflow-x-auto border rounded">
           <table className="w-full text-left whitespace-nowrap">
             <thead className="bg-gray-50 text-gray-500 font-bold border-b">
@@ -2607,7 +2616,7 @@ function OrderManagerWorkspace({ ev }) {
                   <td className="p-4 text-gray-400 text-center">›</td>
                   {fields.map(f => (
                     <td key={f} className="p-4">
-                      {f === '购买人' ? <span className="text-blue-500 cursor-pointer hover:underline">{r[f]}</span> : 
+                      {f === '购买人' ? <span className="text-blue-500 cursor-pointer hover:underline">{r[f]}</span> :
                        f === '支付状态' ? <span className={r[f] === '未支付' ? 'text-orange-400' : ''}>{r[f]}</span> :
                        r[f]}
                     </td>
@@ -2658,7 +2667,7 @@ function ShopSpecs({categories,parameters=false,initialSpec=null}){
 function StoreWorkspace({ ev }){
   const [tab, setTab] = useState(0);
   const menus = ['分类管理', '规格管理', '规格参数', '品牌管理', '店铺管理', '商品管理', '订单管理'];
-  
+
   const [rows, setRows] = useState(() => store('shop-categories', [
     { name: '车动泰', icon: 'assets/image-20.png', cover: 'assets/image-21.png' },
     { name: '纳大师', icon: 'assets/image-22.png', cover: 'assets/image-23.png' }
@@ -2716,7 +2725,7 @@ function StoreWorkspace({ ev }){
     if (tab === 3) return <BrandManager categories={rows} />;
     if (tab === 4) return <StoreManager categories={rows} />;
     if (tab === 6) return <OrderManagerWorkspace ev={ev} />;
-    
+
     if (tab === 0) {
       if (draft) {
         return (
@@ -2781,7 +2790,7 @@ function StoreWorkspace({ ev }){
         </>
       );
     }
-    
+
     return <RecordManager key={tab} label={menus[tab]} storageKey={'shop-resource-' + tab} fields={otherFields[tab]} />;
   };
 
@@ -2827,7 +2836,7 @@ function ChildEvents({ev,onHome,onEnter}) {
 function App() {
   const { user, login, logout, authReady } = useAuth();
   const [view, setView] = useState({ page: "list", ev: null });
-  
+
   useEffect(()=>{
     const child=e=>{
       if ((e.detail.form?.level || e.detail.tag) !== '年赛') return;
