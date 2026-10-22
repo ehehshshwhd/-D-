@@ -31,8 +31,13 @@ test('root full-system page loads its score-review adapter from the served asset
   assert.equal(page.status, 200)
   const html = await page.text()
   assert.match(html, /src="\/full-system\/score-review-cloud\.js"/)
+  assert.match(html, /src="\/full-system\/score-review-export\.js"/)
 
   const adapter = await fetch(`${base}/full-system/score-review-cloud.js`)
   assert.equal(adapter.status, 200)
   assert.match(await adapter.text(), /async function loadRows/)
+
+  const exporter = await fetch(`${base}/full-system/score-review-export.js`)
+  assert.equal(exporter.status, 200)
+  assert.match(await exporter.text(), /horizontal: 'center'/)
 })
