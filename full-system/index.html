@@ -41,8 +41,8 @@
   .race-phone-back,.race-phone-menu { position:absolute; top:50%; transform:translateY(-50%); color:#fff; }
   .race-phone-back { left:20px; font-size:42px; font-weight:200; line-height:1; }
   .race-phone-menu { right:18px; padding:7px 10px; border:1px solid rgba(255,255,255,.45); border-radius:20px; background:rgba(90,54,0,.28); font-size:14px; letter-spacing:1px; line-height:1; }
-  .race-phone-scroll { height:calc(100% - 68px); box-sizing:border-box; padding:19px 15.5px 30px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
-  .race-phone-scroll::-webkit-scrollbar { width:0; height:0; }
+  .race-phone-scroll { height:calc(100% - 68px); box-sizing:border-box; padding:19px 15.5px 30px; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:none; -ms-overflow-style:none; }
+  .race-phone-scroll::-webkit-scrollbar,.race-phone-content .mini-preview-table-wrap::-webkit-scrollbar { width:0; height:0; display:none; }
   .race-phone-intro { padding:0 0 8px; }
   .race-phone-title { margin:0; color:#111; font-size:18px; line-height:1.52; font-weight:400; overflow-wrap:anywhere; }
   .race-phone-meta { position:relative; display:flex; align-items:center; gap:9px; margin-top:14px; min-height:24px; color:#9b9b9b; font-size:13px; line-height:1.5; }
@@ -73,7 +73,7 @@
   .race-phone-content table { width:100%; max-width:100%; margin:0; border-collapse:collapse; table-layout:fixed; font-size:11px; color:#222; }
   .race-phone-content th,.race-phone-content td { padding:5px 2px; border:1px solid #e6e6e6; text-align:center; line-height:1.35; word-break:break-word; overflow-wrap:anywhere; }
   .race-phone-content th { background:#eaf3fb; font-weight:700; }
-  .race-phone-content .mini-preview-table-wrap { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
+  .race-phone-content .mini-preview-table-wrap { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:none; -ms-overflow-style:none; }
   .race-phone-content .mini-preview-prize-block { margin:17px 0 24px; border:0; border-radius:0; overflow:visible; background:transparent; font-size:11px; color:#222; }
   .race-phone-content .mini-preview-prize-title { padding:9px 6px; text-align:center; font-size:13.5px; font-weight:700; line-height:1.4; background:#ffc313; color:#111; }
   .race-phone-content .mini-preview-prize-blue .mini-preview-prize-title { background:#1886d2; color:#fff; }
@@ -1239,8 +1239,8 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
         <div><h2 className="font-bold text-lg text-gray-900">手机预览</h2><p className="text-xs text-gray-500 mt-1">展示当前编辑内容，无需保存</p></div>
         <button type="button" aria-label="关闭手机预览" onClick={onClose} className="px-3 py-2 text-2xl leading-none text-gray-500 hover:text-gray-900">×</button>
       </header>
-      <div className="min-h-0 max-w-full overflow-auto flex items-center justify-center" style={{ height: 844 * scale, width: 390 * scale, flex: '0 0 auto' }}>
-        <div className="race-phone-preview" style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+      <div className="relative min-h-0 max-w-full shrink-0 overflow-hidden" style={{ height: 844 * scale, width: 390 * scale }}>
+        <div className="race-phone-preview absolute left-0 top-0" style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
           <div className="race-phone-status"><span>10:07</span><span aria-hidden="true">◔ ▭</span></div>
           <div className="race-phone-nav"><span className="race-phone-back" aria-hidden="true">‹</span><span>赛事详情</span><span className="race-phone-menu" aria-hidden="true">•••　◉</span></div>
           <div className="race-phone-scroll">
