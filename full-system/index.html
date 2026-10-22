@@ -62,7 +62,7 @@
   .race-phone-info-line { display:flex; gap:8px; padding:4px 0; color:#4b555c; font-size:15px; line-height:1.65; overflow-wrap:anywhere; }
   .race-phone-info-line strong { flex:none; color:#8a949b; font-weight:400; }
   .race-phone-divider { height:8px; margin:4px -15.5px 14px; background:#f5f5f7; }
-  .race-phone-cover { display:block; width:calc(100% + 31px); height:auto; max-width:none; object-fit:contain; border-radius:0; margin:-19px -15.5px 18px; }
+  .race-phone-cover { display:block; width:100%; height:auto; max-width:100%; object-fit:contain; border-radius:2px; margin:0 0 18px; }
   .race-phone-content img { display:block; width:100%; height:auto; max-width:100%; object-fit:contain; border-radius:2px; margin:0 0 18px; }
   .race-phone-content { color:#3e3e3e; font-size:14px; line-height:1.88; letter-spacing:.15px; overflow-wrap:anywhere; word-break:break-word; }
   .race-phone-content p,.race-phone-content h1,.race-phone-content h2,.race-phone-content h3,.race-phone-content h4,.race-phone-content blockquote { white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -1244,7 +1244,6 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
           <div className="race-phone-status"><span>10:07</span><span aria-hidden="true">◔ ▭</span></div>
           <div className="race-phone-nav"><span className="race-phone-back" aria-hidden="true">‹</span><span>赛事详情</span><span className="race-phone-menu" aria-hidden="true">•••　◉</span></div>
           <div className="race-phone-scroll">
-            {preview.cover && <img className="race-phone-cover" src={preview.cover} alt="赛事封面" />}
             <section className="race-phone-intro">
               <h1 className="race-phone-title">{preview.title || '未填写赛事标题'}</h1>
               <div className="race-phone-meta"><span>◷  {dates.display || dates.start || '待设置'}</span><span>◉  {Number(preview.views) || 0}</span><span className="race-phone-meta-status">{preview.status || '报名中'}</span></div>
@@ -1270,6 +1269,7 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
             <div className="race-phone-divider" />
             <section className="race-phone-section">
               <h2>{preview.sectionTitles?.detail || '赛事详情'}</h2>
+              {preview.cover && <img className="race-phone-cover" src={preview.cover} alt="赛事封面" />}
               <div className="race-phone-content" dangerouslySetInnerHTML={{ __html: preview.content || '' }} />
             </section>
           </div>
