@@ -1307,6 +1307,10 @@ function InfoTab({ ev, onHome }) {
   const [coverFileId,setCoverFileId] = useState(ev.coverFileId || '');
   const [coverUploading,setCoverUploading] = useState(false);
   const [editorContent,setEditorContent] = useState(ev.content || '');
+  const [editorVersion,setEditorVersion] = useState(0);
+  const [action,setAction] = useState('');
+  const actionPending=useRef(false);
+  const busy=Boolean(action)||coverUploading;
   const upload=useRef();
   const [phonePreview,setPhonePreview]=useState(null);
   const [previewScale,setPreviewScale]=useState(1);
@@ -1316,6 +1320,7 @@ function InfoTab({ ev, onHome }) {
   useEffect(()=>{if(phonePreview)setPhonePreview(buildPhonePreview())},[f,cover,editorContent]);
   useEffect(()=>{if(!phonePreview)return;const close=e=>{if(e.key==='Escape')setPhonePreview(null)};document.addEventListener('keydown',close);return()=>document.removeEventListener('keydown',close)},[phonePreview]);
   const submit=async (publish=false)=>{
+    if(actionPending.current||coverUploading)return;
     const parent=parentCandidates.find(e=>e.title===f.parent);
     if(['周赛','月赛'].includes(f.level)&&!parent){alert('请选择符合级别的父级赛事');return;}
     if(EVENTS.some(e=>String(e.parentId)===String(ev.id)&&levelOf(e)!==(f.level==='年赛'?'月赛':f.level==='月赛'?'周赛':'__none'))){alert('当前赛事已有下级赛事，不能修改为不匹配的级别');return;}
@@ -1326,17 +1331,33 @@ function InfoTab({ ev, onHome }) {
     if(dates.start>dates.end || dates.deadline>dates.end){alert('请检查比赛时间和报名截止时间');return;}
     const editor=document.querySelector('[data-editor]');
     const content=editorContent||editor?.innerHTML||'';
+    actionPending.current=true;
+    setAction(publish?'publish':'save');
     try {
       if(API_URL) await saveEditorEvent(ev,{...f,parentId:parent?.id||null},dates,content,publish,coverFileId);
       else {Object.assign(ev,{publicationStatus:publish?'pending':'draft',publicationRequestedAt:publish?new Date().toISOString():null,parentId:parent?.id||null,tag:f.level||undefined,title:f.title,type:f.type,hideSignupCount:f.hideSignupCount===true,form:f,img:cover,dates,content});delete ev.isNew;const nextEvents=[ev,...EVENTS.filter(e=>String(e.id)!==String(ev.id))];EVENTS=nextEvents;persist();}
-    } catch(error) { alert(`赛事保存失败：${error.message||error}`); return; }
-    alert(publish?'赛事已保存并发布到云端。':'赛事草稿已保存到云端。');
-    onHome();
+      alert(publish?'赛事已保存并发布到云端。':'赛事草稿已保存到云端。');
+      onHome();
+    } catch(error) { alert(`赛事保存失败：${error.message||error}`); }
+    finally { actionPending.current=false;setAction(''); }
   };
   const handleDelete=async()=>{
+    if(actionPending.current||coverUploading)return;
     if(!confirm('确定删除此赛事？此操作不可撤销。'))return;
+    actionPending.current=true;
+    setAction('delete');
     try { if(API_URL) await deleteEditorEvent(ev.id); else {EVENTS=EVENTS.filter(e=>String(e.id)!==String(ev.id));persist();} onHome(); }
     catch(error){alert(`删除赛事失败：${error.message||error}`)}
+    finally { actionPending.current=false;setAction(''); }
+  };
+  const reset=()=>{
+    if(busy||!confirm('恢复为上次保存的内容？'))return;
+    setF({...initial.current});
+    setCover(ev.isNew?'':ev.img);
+    setCoverFileId(ev.coverFileId||'');
+    setEditorContent(ev.content||'');
+    setEditorVersion(version=>version+1);
+    document.querySelectorAll('[data-date]').forEach(el=>el.value=el.defaultValue);
   };
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }));
   return (
@@ -1382,13 +1403,13 @@ function InfoTab({ ev, onHome }) {
 
         <div className="flex">
           <label className="w-[156px] shrink-0 pr-[16px] text-right text-[18px] text-[#606266] h-[54px] flex items-center justify-end">赛事详情</label>
-          <div className="flex-1 min-w-0"><Editor ev={ev} onChange={setEditorContent} /></div>
+          <div className="flex-1 min-w-0"><Editor key={editorVersion} ev={ev} onChange={setEditorContent} /></div>
         </div>
       </div>
       <div className="h-[88px] shrink-0 bg-[#f2f2f2] flex items-center justify-center gap-[13px]">
-        <button onClick={handleDelete} className="px-5 h-[53px] rounded border border-red-300 text-red-500 bg-white">删除赛事</button><button type="button" onClick={openPhonePreview} className="px-5 h-[53px] rounded border border-blue-300 text-blue-500 bg-white"><i className="fas fa-mobile-alt mr-2"/>手机预览</button><button onClick={()=>submit(false)} title="保存为草稿，不发布到小程序" className="w-[150px] h-[53px] rounded-[4px] bg-[#409eff] hover:bg-[#66b1ff] text-white text-[18px] font-bold">提交并返回</button>
-        <button onClick={()=>{if(confirm('恢复为上次保存的内容？')){setF({...initial.current});setCover(ev.img);document.querySelectorAll('[data-date]').forEach(el=>el.value=el.defaultValue);document.querySelector('[data-editor]').innerHTML=ev.content || '';}}} className="w-[94px] h-[53px] rounded-[4px] bg-white border border-[#dcdfe6] text-[18px] text-[#606266] font-medium hover:text-[#409eff] hover:border-[#c6e2ff]">重置</button>
-        <button onClick={()=>submit(true)} title="保存并申请发布；实际同步需要连接小程序后端" className="px-5 h-[53px] rounded-[4px] bg-[#67c23a] text-white text-[18px]">发布到小程序</button>
+        <button type="button" disabled={busy} onClick={handleDelete} className="px-5 h-[53px] rounded border border-red-300 text-red-500 bg-white disabled:opacity-60 disabled:cursor-wait">{action==='delete'?'正在删除…':'删除赛事'}</button><button type="button" disabled={busy} onClick={openPhonePreview} className="px-5 h-[53px] rounded border border-blue-300 text-blue-500 bg-white disabled:opacity-60 disabled:cursor-wait"><i className="fas fa-mobile-alt mr-2"/>手机预览</button><button type="button" disabled={busy} onClick={()=>submit(false)} title="保存为草稿，不发布到小程序" className="w-[150px] h-[53px] rounded-[4px] bg-[#409eff] hover:bg-[#66b1ff] text-white text-[18px] font-bold disabled:opacity-60 disabled:cursor-wait">{action==='save'?'正在保存…':'提交并返回'}</button>
+        <button type="button" disabled={busy} onClick={reset} className="w-[94px] h-[53px] rounded-[4px] bg-white border border-[#dcdfe6] text-[18px] text-[#606266] font-medium hover:text-[#409eff] hover:border-[#c6e2ff] disabled:opacity-60 disabled:cursor-wait">重置</button>
+        <button type="button" disabled={busy} onClick={()=>submit(true)} title="保存并发布到小程序" className="px-5 h-[53px] rounded-[4px] bg-[#67c23a] text-white text-[18px] disabled:opacity-60 disabled:cursor-wait">{action==='publish'?'正在发布…':'发布到小程序'}</button>
       </div>
       {phonePreview&&<MigratedEventPhonePreview preview={phonePreview} scale={previewScale} onClose={()=>setPhonePreview(null)} />}
     </>
