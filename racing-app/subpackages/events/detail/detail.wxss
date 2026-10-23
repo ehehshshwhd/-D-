@@ -178,4 +178,23 @@ page{background:#fff;color:#333;font-family:-apple-system,BlinkMacSystemFont,"Pi
 .score-trophy-3 .score-trophy-bowl{background:linear-gradient(135deg,#e9ae7e,#b56b3d)}
 .generic-detail-poster{margin-top:30rpx}
 .generic-detail-copy{white-space:pre-wrap}
+.registration-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1200;display:flex;align-items:flex-end}
+.registration-panel{width:100%;max-height:90vh;display:flex;flex-direction:column;box-sizing:border-box;background:#fff;border-radius:28rpx 28rpx 0 0;padding:28rpx 28rpx calc(28rpx + env(safe-area-inset-bottom));overflow:hidden}
+.registration-header{display:flex;align-items:center;justify-content:space-between;flex-shrink:0;font-size:34rpx;font-weight:600}
+.registration-header button{margin:0;padding:0 18rpx;font-size:42rpx;background:#fff;line-height:1.3}
+.registration-header button::after,.registration-tabs button::after{border:0}
+.registration-scroll{min-height:0;flex:1;height:65vh;margin-top:24rpx;width:100%;overflow:hidden}
+.registration-picker{padding:22rpx 16rpx;margin-bottom:20rpx;border:1rpx solid #dcdfe6;border-radius:10rpx;font-size:28rpx;overflow-wrap:anywhere}
+.registration-tabs{display:flex;gap:16rpx;margin-bottom:20rpx}
+.registration-tabs button{flex:1;margin:0;font-size:28rpx;background:#f5f6f7}
+.registration-tabs .selected{color:#ef8700;background:#fff4df}
+.registration-field{display:flex;align-items:center;gap:20rpx;min-height:90rpx;font-size:28rpx}
+.registration-field text{width:170rpx;flex-shrink:0}
+.registration-field input{flex:1;min-width:0;border:1rpx solid #dcdfe6;border-radius:8rpx;padding:16rpx;box-sizing:border-box;height:72rpx;font-size:28rpx}
+.registration-note{padding:26rpx 0;color:#777;font-size:24rpx;line-height:1.7}
+.registration-error{padding:20rpx 0;color:#c44800;font-size:26rpx;line-height:1.5}
+.registration-submit{flex-shrink:0;width:100%;margin:20rpx 0 0;background:#ff9700;color:#fff;font-size:30rpx}
+.registration-row{padding:24rpx 0;border-bottom:1rpx solid #eee;font-size:28rpx;line-height:1.7;overflow-wrap:anywhere}
+.registration-row view+view{color:#777;font-size:25rpx}
+.registration-number{color:#ee8700;font-weight:600}
 .align-left{text-align:left}.align-center{text-align:center}.align-right{text-align:right}.align-justify{text-align:justify}.content-bold{font-weight:700}.content-block-list-ordered{counter-reset:content-list}.content-block-list-ordered .content-block-list-item::before{counter-increment:content-list;content:counter(content-list) "、"}.content-block-list-unordered .content-block-list-item::before{content:"•  "}.content-block-list .content-block-list-item{padding-left:0}.content-block-list .content-block-list-item::before{display:inline;color:currentColor}

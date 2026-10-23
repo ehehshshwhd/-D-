@@ -401,12 +401,15 @@ main.event-info-single-card .form-col .mt-\[2px\]{font-size:16px;line-height:1.6
  /* Event options use one shared row so their text and checkboxes keep the same baseline. */
  main.event-info-single-card .event-basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 -14px}
  main.event-info-single-card .event-basic-fields>.form-col{width:100%!important}
- main.event-info-single-card .event-basic-fields>.form-col:last-child{align-self:end}
+ main.event-info-single-card .event-basic-fields .event-basic-control{height:54px;min-width:0}
+ main.event-info-single-card .event-basic-fields .event-basic-select{width:100%;height:54px;border:1px solid #dcdfe6;border-radius:4px;padding:0 18px;background:#fff;color:#606266;font:inherit;cursor:pointer}
+ main.event-info-single-card .event-basic-fields .event-basic-select:focus{outline:2px solid #409eff;outline-offset:-1px}
  main.event-info-single-card .form-col .event-field-option{display:flex;align-items:center;gap:8px;width:auto!important;min-height:24px;margin-top:12px;padding:0!important;font-size:18px!important;line-height:24px;white-space:nowrap;cursor:pointer}
  main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin:0 0 24px 156px}
  main.event-info-single-card .form-col .event-field-option input[type=checkbox]{width:20px!important;height:20px!important;flex:0 0 20px;margin:0;accent-color:#409eff}
  @media(min-width:1800px){main.event-info-single-card .form-col .event-field-option{font-size:20px!important}}
- @media(max-width:1199px){main.event-info-single-card .event-basic-fields{grid-template-columns:1fr;margin:0 -20.5px}}
+ @media(min-width:761px) and (max-width:1600px){main.event-info-single-card .event-basic-fields>.form-col>div>label{width:108px;min-width:108px;font-size:17px}main.event-info-single-card .event-basic-fields>.form-col{padding-left:14px;padding-right:14px}}
+ @media(max-width:760px){main.event-info-single-card .event-basic-fields{grid-template-columns:1fr;margin:0 -20.5px}}
  @media(max-width:1100px){main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin-left:130px}}
  @media(max-width:760px){main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin-left:0}}
 @media(max-width:760px){body,input,button,select,textarea{font-size:16px}header.relative>nav>a{font-size:16px}aside.w-\[266px\]>div{font-size:16px;height:48px}main table,main th{font-size:16px!important}}
@@ -619,7 +622,7 @@ function editorEventToCloudEvent(event, fields, dates, content) {
   const form = fields || {};
   const source = event && typeof event === 'object' ? event : {};
   const { content: _content, form: _form, dates: _dates, img: _img, displayId: _displayId, isNew: _isNew, ...eventData } = source;
-  return { ...eventData, id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), hideSignupCount: form.hideSignupCount === true, registrationEnabled: form.registrationEnabled === true, detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
+  return { ...eventData, id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), hideSignupCount: form.hideSignupCount === true, registrationEnabled: form.registrationEnabled === true, detailPageHtml: content || '', detailPageConfigured: Boolean(content), detailPageBodyOnly: true, coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
 }
 function sanitizeEditorSource(value) {
   const doc = new DOMParser().parseFromString(String(value || ''), 'text/html');
@@ -1333,7 +1336,7 @@ function MigratedEventPhonePreview({ preview, scale, onClose }) {
                 return <div className="race-phone-signup-row" key={`${name}-${index}`}><strong>{name}</strong>　¥ {fee}{note && !/^已报\s*\d+/.test(note) && `（${note}）`}{!preview.hideSignupCount && <> <span>(已报<span style={{ color: '#f90' }}>0</span>{unit === '辆' ? '辆' : unit})</span></>}</div>;
               })}</div>
             </section>}
-            <div className="race-phone-actions"><button type="button">{preview.sectionTitles?.results || '查看赛事详情'}</button>{preview.registrationEnabled && <button type="button">查看报名列表</button>}{preview.workBackendEnabled && <button type="button">进入工作后台</button>}</div>
+            <div className="race-phone-actions">{preview.registrationEnabled ? <><button type="button">立即报名</button><button type="button">查看报名列表</button></> : <><button type="button">查看成绩详情</button>{preview.workBackendEnabled && <button type="button">进入工作后台</button>}</>}</div>
             <div className="race-phone-divider" />
             <section className="race-phone-section race-phone-info">
               <h2>{preview.sectionTitles?.info || '赛事信息'}</h2>
@@ -1435,10 +1438,10 @@ function InfoTab({ ev, onHome }) {
       <div className="flex-1 min-h-0 overflow-y-auto thin-scroll mt-[11px] pl-[26px] pr-[34px] pt-[32px] pb-[30px]">
         <Section title="基础信息" />
         <div className="event-basic-fields">
-          <Col span={8} sm={24}><Field label="赛事标题" required><TextInput value={f.title} onChange={set("title")} max={120} placeholder="请输入赛事标题" /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="赛事类型" help="可留空继承父级"><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="举办城市" help={<label className="event-field-option"><input type="checkbox" checked={f.registrationEnabled} onChange={e=>set("registrationEnabled")(e.target.checked)} />开启报名</label>}><CityPicker value={f.city} onChange={set("city")} /></Field></Col>
-          <Col span={8} sm={12}><label className="event-field-option"><input type="checkbox" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></Col>
+          <Col span={8} sm={24}><Field label="赛事标题" required><div className="event-basic-control"><TextInput value={f.title} onChange={set("title")} max={120} placeholder="请输入赛事标题" /></div></Field></Col>
+          <Col span={8} sm={12}><Field auto label="赛事类型" help={<>可留空继承父级<label className="event-field-option"><input type="checkbox" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></>}><div className="event-basic-control"><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></div></Field></Col>
+          <Col span={8} sm={12}><Field auto label="举办城市"><div className="event-basic-control"><CityPicker value={f.city} onChange={set("city")} /></div></Field></Col>
+          <Col span={8} sm={12}><Field auto label="开启报名"><div className="event-basic-control"><select aria-label="开启报名" className="event-basic-select" value={f.registrationEnabled ? 'yes' : 'no'} onChange={e=>set("registrationEnabled")(e.target.value==='yes')}><option value="yes">是</option><option value="no">否</option></select></div></Field></Col>
         </div>
 
         <Section title="时间设置" />
@@ -1506,9 +1509,9 @@ function GroupEntryForm({value,onSave,onCancel}) {
 function EventGroupManager({ev}) {
  const fields=GROUP_COLS, flags=['开启报名','重复报名','微信支付','赛币支付','是否显示','是否投保'];
  const normalizeRow=r=>({...r,报名单位:r.报名单位||(/场地赛|攀爬赛|女子组|专业组|新秀组/.test(r.名称||'')?'人':'车'),报名备注:r.报名备注||'',是否投保:r.是否投保||'是',是否显示:r.是否显示||'是',开启报名:r.开启报名||'是'});
- const eventRows=()=>{const options=Array.isArray(ev.signupOptions)?ev.signupOptions:[],names=Array.isArray(ev.groups)?ev.groups.map(group=>typeof group==='string'?group:group?.name).filter(Boolean):[],visible=Array.isArray(ev.visibleGroups)?ev.visibleGroups:[],optionNames=new Set(options.map(option=>String(option.name||option.groupName||'').trim()).filter(Boolean));const rows=options.map(option=>{const name=String(option.name||option.groupName||'').trim(),rawFee=String(option.fee??option.price??''),fee=rawFee.replace(/^¥\s*/,'').replace(/\s*\/(?:人|辆|车|队)$/,'');return normalizeRow({名称:name,报名费:fee||'0',报名单位:option.unit||(/\/(?:辆|车)$/.test(rawFee)?'车':/\/队$/.test(rawFee)?'队':'人'),报名备注:option.note||'',人数上限:option.quota??option.capacity??'0',毫秒位数:option.milliseconds??0,最大给时:option.maxTime??0,开启报名:option.registrationEnabled===false?'否':'是',重复报名:option.allowDuplicate?'是':'否',微信支付:option.wechatPay===false?'否':'是',赛币支付:option.coinPay===false?'否':'是',是否显示:visible.length?(visible.includes(name)?'是':'否'):'是',排序:option.sort??0,是否投保:option.insurance===false?'否':'是'})});for(const name of names)if(!optionNames.has(String(name).trim()))rows.push(normalizeRow({名称:String(name).trim(),报名费:'0',人数上限:'0',毫秒位数:0,最大给时:0,开启报名:'否',重复报名:'否',微信支付:'否',赛币支付:'否',是否显示:visible.length?(visible.includes(name)?'是':'否'):'是',排序:rows.length,是否投保:'是'}));return rows};
+ const eventRows=()=>{const options=Array.isArray(ev.signupOptions)?ev.signupOptions:[],names=Array.isArray(ev.groups)?ev.groups.map(group=>typeof group==='string'?group:group?.name).filter(Boolean):[],visible=Array.isArray(ev.visibleGroups)?ev.visibleGroups:[],optionNames=new Set(options.map(option=>String(option.name||option.groupName||'').trim()).filter(Boolean));const rows=options.map(option=>{const name=String(option.name||option.groupName||'').trim(),rawFee=String(option.fee??option.price??''),fee=rawFee.replace(/^¥\s*/,'').replace(/\s*\/(?:人|辆|车|队)$/,'');return normalizeRow({名称:name,报名费:fee||'0',报名单位:option.unit||(/\/(?:辆|车)$/.test(rawFee)?'车':/\/队$/.test(rawFee)?'队':'人'),报名备注:option.note||'',人数上限:option.quota??option.capacity??'0',毫秒位数:option.milliseconds??0,最大给时:option.maxTime??0,开启报名:option.registrationEnabled===false?'否':'是',领航员必填:option.navigatorRequired===true?'是':'否',重复报名:option.allowDuplicate?'是':'否',微信支付:option.wechatPay===false?'否':'是',赛币支付:option.coinPay===false?'否':'是',是否显示:visible.length?(visible.includes(name)?'是':'否'):'是',排序:option.sort??0,是否投保:option.insurance===false?'否':'是'})});for(const name of names)if(!optionNames.has(String(name).trim()))rows.push(normalizeRow({名称:String(name).trim(),报名费:'0',人数上限:'0',毫秒位数:0,最大给时:0,开启报名:'否',重复报名:'否',微信支付:'否',赛币支付:'否',是否显示:visible.length?(visible.includes(name)?'是':'否'):'是',排序:rows.length,是否投保:'是'}));return rows};
  const [rows,setRows]=useState(()=>{const remoteRows=eventRows();return remoteRows.length?remoteRows:store('groups-'+ev.id,[]).map(normalizeRow)}),[draft,setDraft]=useState(null),[idx,setIdx]=useState(-1),[error,setError]=useState(''),[syncing,setSyncing]=useState(false),[syncStatus,setSyncStatus]=useState('');
- const save=async next=>{setSyncing(true);setSyncStatus('正在保存并同步到赛事云端…');try{const clean=next.map(normalizeRow),current=EVENTS.find(item=>String(item.id)===String(ev.id))||ev;if(!API_URL)throw new Error('没有配置赛事云端接口');const names=clean.map(r=>String(r.名称||'').trim()).filter(Boolean),visible=clean.filter(r=>r['是否显示']==='是').map(r=>String(r.名称||'').trim()).filter(Boolean),signupOptions=clean.filter(r=>r['开启报名']==='是'&&r['是否显示']==='是'&&String(r.名称||'').trim()).map(r=>({name:String(r.名称).trim(),fee:String(r.报名费??'').trim(),unit:r.报名单位||'人',quota:String(r.人数上限??'0').trim(),note:String(r.报名备注||'').trim()}));const payload={...current,groups:names,visibleGroups:visible,signupOptions,registrationEnabled:current.registrationEnabled===true,published:current.published!==false,saveMode:current.published===false?'draft':'publish'};const response=await fetch(`${API_URL}/api/events`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});let result=null;try{result=await response.json()}catch{}if(!response.ok||!result?.ok||!result.event)throw new Error(result?.message||`云端保存失败（${response.status}）`);const saved=cloudEventToEditorEvent(result.event);EVENTS=assignEventDisplayIds([saved,...EVENTS.filter(item=>String(item.id)!==String(saved.id))]);saveStore('groups-'+ev.id,clean);setRows(clean);setError('');setSyncStatus(`已同步到云端，小程序将显示 ${signupOptions.length} 个开启的组别`);return true}catch(e){setError(`云端同步失败：${e.message||e}`);setSyncStatus('');return false}finally{setSyncing(false)}};
+ const save=async next=>{setSyncing(true);setSyncStatus('正在保存并同步到赛事云端…');try{const clean=next.map(normalizeRow),current=EVENTS.find(item=>String(item.id)===String(ev.id))||ev;if(!API_URL)throw new Error('没有配置赛事云端接口');const names=clean.map(r=>String(r.名称||'').trim()).filter(Boolean),visible=clean.filter(r=>r['是否显示']==='是').map(r=>String(r.名称||'').trim()).filter(Boolean),signupOptions=clean.filter(r=>r['开启报名']==='是'&&r['是否显示']==='是'&&String(r.名称||'').trim()).map(r=>({name:String(r.名称).trim(),fee:String(r.报名费??'').trim(),unit:r.报名单位||'人',quota:String(r.人数上限??'0').trim(),note:String(r.报名备注||'').trim(),navigatorRequired:r.领航员必填==='是'}));const payload={...current,groups:names,visibleGroups:visible,signupOptions,registrationEnabled:current.registrationEnabled===true,published:current.published!==false,saveMode:current.published===false?'draft':'publish'};const response=await fetch(`${API_URL}/api/events`,{method:'POST',credentials:'include',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(payload)});let result=null;try{result=await response.json()}catch{}if(!response.ok||!result?.ok||!result.event)throw new Error(result?.message||`云端保存失败（${response.status}）`);const saved=cloudEventToEditorEvent(result.event);EVENTS=assignEventDisplayIds([saved,...EVENTS.filter(item=>String(item.id)!==String(saved.id))]);saveStore('groups-'+ev.id,clean);setRows(clean);setError('');setSyncStatus(`已同步到云端，小程序将显示 ${signupOptions.length} 个开启的组别`);return true}catch(e){setError(`云端同步失败：${e.message||e}`);setSyncStatus('');return false}finally{setSyncing(false)}};
  const edit=(r,i)=>{setDraft(i<0?{...r,名称:'',报名费:0,报名备注:'',人数上限:0,报名单位:'人',毫秒位数:'',领航员必填:'是',开启报名:'是',重复报名:'否',微信支付:'是',赛币支付:'是',是否投保:'是',是否显示:'是'}:{...r});setIdx(i);setError('')};
  if(draft)return <div className="flex-1 overflow-y-auto min-h-0"><GroupEntryForm value={draft} onCancel={()=>setDraft(null)} onSave={async value=>{if(rows.some((r,i)=>i!==idx&&r.名称===value.名称)){setError('组别名称不能重复');return false;}const next=[...rows];if(idx<0)next.push(value);else next[idx]=value;const ok=await save(next);if(ok)setDraft(null);return ok}}/>{error&&<p role="alert" className="text-red-500">{error}</p>}</div>;
  return <div className="flex-1 overflow-auto pt-4 pr-5"><button disabled={syncing} className="bg-[#409eff] text-white rounded px-7 h-[53px] text-lg disabled:opacity-50" onClick={()=>edit(Object.fromEntries(fields.map(c=>[c,c==='名称'?'':flags.includes(c)?'否':c==='报名单位'?'人':'0'])),-1)}>添加组别</button><div className="overflow-x-auto x-scroll border mt-[22px]"><table className="w-full border-collapse whitespace-nowrap text-lg"><thead><tr className="h-[64px] text-gray-400">{fields.map(c=><th className="border border-[#ebeef5] min-w-[160px] px-4" key={c}>{c}</th>)}<th className="sticky-right bg-white min-w-[255px] text-left px-4 border-b">操作</th></tr></thead><tbody>{rows.map((r,i)=><tr key={i} className="h-[76px] text-gray-600">{fields.map(c=><td key={c} className={'border border-[#ebeef5] text-center px-4 '+(flags.includes(c)?r[c]==='是'?'text-[#67c23a]':'text-[#e6a23c]':'')}>{r[c]??'—'}</td>)}<td className="sticky-right bg-white px-4 border-b"><div className="flex gap-3"><button disabled={syncing} className="bg-[#409eff] text-white px-6 py-3 rounded disabled:opacity-50" onClick={()=>edit(r,i)}>编辑</button><button disabled={syncing} className="bg-[#f56c6c] text-white px-6 py-3 rounded disabled:opacity-50" onClick={()=>{if(confirm('删除此组别？已有报名和回合不会自动删除。'))save(rows.filter((_,j)=>i!==j))}}>删除</button></div></td></tr>)}{!rows.length&&<tr><td colSpan={fields.length+1} className="text-center p-12 text-gray-400">暂无组别</td></tr>}</tbody></table></div><p className="text-right mt-8 text-lg text-gray-500">总共：{rows.length} 项</p>{syncStatus&&<p role="status" className="text-green-700">{syncStatus}</p>}{error&&<p role="alert" className="text-red-500">{error}</p>}{draft&&<div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"><form role="dialog" aria-modal="true" className="bg-white rounded-lg p-7 w-[640px] max-w-full max-h-[90vh] overflow-auto" onSubmit={async e=>{e.preventDefault();if(!draft.名称.trim()){setError('请输入组别名称');return;}if(rows.some((r,i)=>i!==idx&&r.名称===draft.名称.trim())){setError('组别名称不能重复');return;}const next=[...rows],value={...draft,名称:draft.名称.trim()};if(idx<0)next.push(value);else next[idx]=value;if(await save(next))setDraft(null)}}><h2 className="text-xl mb-6">{idx<0?'添加':'编辑'}组别</h2><div className="grid grid-cols-2 gap-5">{fields.map(c=><label key={c}>{c}{flags.includes(c)?<select value={draft[c]||'否'} onChange={e=>setDraft({...draft,[c]:e.target.value})} className="block border rounded p-3 w-full mt-2"><option>是</option><option>否</option></select>:c==='报名单位'?<select required value={draft[c]||'人'} onChange={e=>setDraft({...draft,[c]:e.target.value})} className="block border rounded p-3 w-full mt-2">{['人','车','队'].map(unit=><option key={unit}>{unit}</option>)}</select>:<input required type={c==='名称'?'text':'number'} min="0" max={c==='毫秒位数'?3:undefined} step={c==='报名费'?'0.01':'1'} value={draft[c]??0} onChange={e=>setDraft({...draft,[c]:e.target.value})} className="block border rounded p-3 w-full mt-2"/>}</label>)}</div><p className="text-xs text-gray-400 mt-5">点击保存后自动同步到云端和小程序。报名人数目前显示为 0，实际报名统计尚未接入。</p>{syncStatus&&<p role="status" className="text-green-700 mt-3">{syncStatus}</p>}{error&&<p role="alert" className="text-red-500 mt-3">{error}</p>}<div className="flex justify-end gap-3 mt-6"><button type="button" disabled={syncing} onClick={()=>{setDraft(null);setError('')}} className="border rounded px-6 py-2">取消</button><button disabled={syncing} className="bg-blue-500 text-white rounded px-6 py-2 disabled:opacity-50">{syncing?'保存中…':'保存'}</button></div></form></div>}</div>
@@ -1609,7 +1612,8 @@ function RaceOperations({ev,section}) {
  return <div className="p-6 overflow-auto flex-1">{bar}<h2 className="text-xl font-bold mb-5">赛后归档与操作追踪</h2><button className="bg-blue-500 text-white px-5 py-3 rounded mb-6" onClick={exportAll}>下载完整赛事归档</button>{store(key+'audit',[]).map((r,i)=><div key={i} className="border-b py-4 flex gap-6"><span className="text-gray-400">{r.time}</span><span>{r.user}</span><span>{r.action}</span></div>)}</div>;
 }
 function SignupManager({ev}) {
-  const groups = store('groups-' + ev.id, []);
+  const savedGroups = store('groups-' + ev.id, []);
+  const groups = savedGroups.length ? savedGroups : (ev.signupOptions || []).map(option => ({名称: option.name, 报名费: option.fee}));
   const [group, setGroup] = useState(groups[0]?.名称 || '');
   const [rows, setRows] = useState(() => store('signup-' + ev.id, []));
   const [draft, setDraft] = useState(null);
@@ -1621,6 +1625,41 @@ function SignupManager({ev}) {
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [roundEntry, setRoundEntry] = useState(null);
+
+  useEffect(() => {
+    if (!API_URL || draft || batch || roundEntry) return;
+    const key = 'signup-' + ev.id, queueKey = `${ev.id}::${key}`;
+    let cancelled = false, loading = false, timer, controller;
+    const refresh = async () => {
+      if (cancelled || loading || document.hidden) return;
+      if (eventDataPendingValues.has(queueKey)) { clearTimeout(timer); timer = setTimeout(refresh, 10000); return; }
+      loading = true;
+      controller = new AbortController();
+      try {
+        const response = await fetch(`${API_URL}/api/event-data?eventId=${encodeURIComponent(ev.id)}`, {credentials: 'include', headers: {Accept: 'application/json'}, signal: controller.signal});
+        const result = await response.json();
+        if (!response.ok || !result?.ok) throw new Error(result?.message || '云端报名读取失败');
+        if (cancelled || eventDataPendingValues.has(queueKey)) return;
+        const item = result.items?.[key];
+        if (!item) return;
+        if (!Array.isArray(item.value) || !Number.isSafeInteger(item.revision) || item.revision < 0) throw new Error('云端报名数据或版本异常');
+        if (item.revision < (eventDataRevisions.get(queueKey) || 0)) return;
+        eventDataRevisions.set(queueKey, item.revision);
+        localStorage.setItem(key, JSON.stringify(item.value));
+        setRows(item.value);
+        setError('');
+      } catch (error) {
+        if (!cancelled) setError(error.message || '云端报名读取失败');
+      } finally {
+        loading = false;
+        if (!cancelled) { clearTimeout(timer); timer = setTimeout(refresh, 10000); }
+      }
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { cancelled = true; clearTimeout(timer); controller?.abort(); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
+  }, [ev.id, draft, batch, roundEntry]);
 
   const fields = ['姓名', '赛号', '车队', '车型', '排量', '身份证', '手机号', '血型', '支付', '顺序'];
  const commit = next => { try { saveStore('signup-' + ev.id, next); setRows(next); return true } catch { setError('保存失败：本地存储空间不足'); return false } };
@@ -2460,6 +2499,7 @@ function DetailPage({ ev, onHome }) {
             remoteKeys.delete(key);
             continue;
           }
+          if (eventDataPendingValues.has(`${eventId}::${key}`)) continue;
           const revision = Number(item.revision);
           eventDataRevisions.set(`${eventId}::${key}`, Number.isSafeInteger(revision) && revision >= 0 ? revision : 0);
           if (isEventDataKey(key, eventId)) localStorage.setItem(key, JSON.stringify(item.value));

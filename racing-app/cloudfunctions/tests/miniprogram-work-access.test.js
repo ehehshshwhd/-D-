@@ -34,7 +34,7 @@ function loadPage(relativePath, options = {}) {
   }
   let page
   vm.runInNewContext(fs.readFileSync(path.join(appRoot, relativePath), 'utf8'), {
-    Page(value) { page = value }, wx, console, setTimeout, clearTimeout,
+    Page(value) { page = value }, wx, console, setTimeout: options.setTimeout || setTimeout, clearTimeout: options.clearTimeout || clearTimeout,
     require(name) {
       if (name.endsWith('/auth')) return auth
       if (name.endsWith('/cloud-container')) return { call: async () => { calls.eventReads++; return { data: { ok: true, events: state.events } } } }
@@ -47,6 +47,66 @@ function loadPage(relativePath, options = {}) {
   page.setData = (value, callback) => { Object.assign(page.data, value); if (callback) callback() }
   return { page, state, calls, storage }
 }
+
+test('registration opens the driver/navigator form, submits once and reads the shared list', async()=>{
+  const {page,state,calls}=loadPage('subpackages/events/detail/detail.js',{user:{id:'user-1'}})
+  page.setData({id:'race-1',eventCloudReady:true,event:{id:'race-1',registrationEnabled:true,signupOptions:[{name:'四驱组'}]}})
+  state.responses={getRegistrationProfiles:{ok:true,eventId:'race-1',profiles:[{姓名:'老车手',手机号:'13800138000'}]},submitRegistration:{ok:true,eventId:'race-1',revision:2},listRegistrations:{ok:true,eventId:'race-1',rows:[{id:'new',姓名:'老车手',赛号:'23',组别:'四驱组'}]}}
+  await page.openRegistration()
+  assert.equal(page.data.registrationPanel,'form')
+  page.chooseRegistrationProfile({detail:{value:'0'}})
+  page.changeRegistrationField({currentTarget:{dataset:{field:'赛号'}},detail:{value:'23'}})
+  await Promise.all([page.submitRegistration(),page.submitRegistration()])
+  assert.equal(calls.cloud.filter(call=>call.data.action==='submitRegistration').length,1)
+  assert.equal(calls.cloud.find(call=>call.data.action==='submitRegistration').data.form.姓名,'老车手')
+  assert.equal(page.data.registrationPanel,'list')
+  assert.equal(page.data.registrationRows[0].赛号,'23')
+})
+
+test('a failed registration preserves the form and retry identifier; a closed event cannot open it',async()=>{
+  const {page,state,calls}=loadPage('subpackages/events/detail/detail.js',{user:{id:'user-1'}})
+  page.setData({id:'race-1',eventCloudReady:true,event:{registrationEnabled:true,signupOptions:[{name:'四驱组'}]}})
+  state.responses={getRegistrationProfiles:{ok:true,eventId:'race-1',profiles:[]},submitRegistration:{ok:false,message:'该组别赛号已被使用'}}
+  await page.openRegistration()
+  page.data.registrationForm={组别:'四驱组',姓名:'张三',手机号:'13800138000',赛号:'23'}
+  await page.submitRegistration()
+  await page.submitRegistration()
+  const submitted=calls.cloud.filter(call=>call.data.action==='submitRegistration')
+  assert.equal(submitted[0].data.requestId,submitted[1].data.requestId)
+  assert.equal(page.data.registrationForm.姓名,'张三')
+  assert.match(page.data.registrationError,/赛号/)
+  page.closeRegistration()
+  page.data.event.registrationEnabled=false
+  await page.openRegistration()
+  assert.equal(page.data.registrationPanel,'')
+})
+
+test('visible event pages reload publication settings and stop polling when hidden',async()=>{
+  const timers=new Map();let timerId=0
+  const {page,state,calls}=loadPage('subpackages/events/detail/detail.js',{events:[{id:'race-1',title:'新赛事',registrationEnabled:false}],setTimeout:(fn)=>{timers.set(++timerId,fn);return timerId},clearTimeout:id=>timers.delete(id)})
+  page.setData({id:'race-1',event:{id:'race-1',registrationEnabled:true}})
+  page.onShow();await tick();await tick()
+  assert.equal(page.data.event.registrationEnabled,false)
+  assert.equal(timers.size,1)
+  state.events[0].registrationEnabled=true
+  const [id,callback]=[...timers][0];timers.delete(id);callback();await tick();await tick()
+  assert.equal(page.data.event.registrationEnabled,true)
+  assert.equal(calls.eventReads,2)
+  page.onHide()
+  assert.equal(timers.size,0)
+})
+
+test('published editor body keeps the native event title, groups and registration entry',async()=>{
+  const {page}=loadPage('subpackages/events/detail/detail.js',{events:[{id:'race-1',title:'正文赛事',detailPageConfigured:true,detailPageBodyOnly:true,detailPageHtml:'<p style="text-align:center">赛事正文</p>',registrationEnabled:true,signupOptions:[{name:'四驱组',fee:'3000'}]}]})
+  page.setData({id:'race-1'})
+  await page.loadPublishedEvent('race-1')
+  assert.equal(page.data.event.detailPageBodyOnly,true)
+  assert.equal(page.data.event.title,'正文赛事')
+  assert.equal(page.data.event.signupOptions[0].name,'四驱组')
+  const markup=fs.readFileSync(path.join(appRoot,'subpackages/events/detail/detail.wxml'),'utf8')
+  assert.match(markup,/event\.detailPageHtml && !event\.detailPageBodyOnly/)
+  assert.match(markup,/wx:if="\{\{event.detailPageBodyOnly\}\}"[^>]*nodes="\{\{event.detailPageHtml\}\}"/)
+})
 
 function liveWorkPage(overrides = {}) {
   const harness = loadPage('pages/work/work.js', overrides)

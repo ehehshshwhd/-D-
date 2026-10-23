@@ -38,6 +38,7 @@ test('long event details fit the CloudBase document limit without losing their H
 
   assert.ok(Buffer.byteLength(JSON.stringify(payload)) < 700 * 1024)
   assert.equal(payload.detailPageHtml, detailPageHtml)
+  assert.equal(payload.detailPageBodyOnly, true, 'the web editor saves body content, not a complete event detail page')
   assert.equal(Object.hasOwn(payload, 'content'), false)
   assert.equal(Object.hasOwn(payload, 'form'), false)
   assert.equal(Object.hasOwn(payload, 'dates'), false)

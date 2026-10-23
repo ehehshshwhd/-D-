@@ -628,6 +628,10 @@ exports.main=async(event)=>{
   const wxContext=cloud.getWXContext()
   const openid=wxContext.OPENID
   if(!openid)return {ok:false,message:'无法确认微信身份，请重新进入小程序'}
+  if(event&&['submitRegistration','listRegistrations','getRegistrationProfiles'].includes(event.action)){
+    try{return {ok:true,...await require('./registration').createRegistrationService({db,ensureCollection,getStoredUser})(event,openid)}}
+    catch(error){return {ok:false,message:error.message||'报名服务暂时不可用'}}
+  }
   if(event&&event.action==='listPermissions'){
     try{return {ok:true,...await (await requireAdmin(openid),listPermissions())}}
     catch(error){return {ok:false,message:error.message||'无权限查看'}}

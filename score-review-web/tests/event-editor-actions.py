@@ -37,11 +37,15 @@ class EditorActions(unittest.TestCase):
         self.requests = []
         self.errors = []
         self.fail_next = False
+        self.event_data = {}
+        self.data_reads = 0
         self.page = self.browser.new_page(viewport=dict(width=1280, height=800))
         self.page.on('pageerror', lambda error: self.errors.append(str(error)))
         self.page.route('http://race-actions.test/**', self.mock_cloud)
         self.page.add_init_script('''
             window.RACE_API_SAME_ORIGIN=true;
+            // The HTTP test origin lacks secure-context randomUUID; production uses HTTPS.
+            if(!crypto.randomUUID)crypto.randomUUID=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
             window.alerts=[];window.alert=message=>window.alerts.push(message);
             window.allowConfirm=true;window.confirm=()=>window.allowConfirm;
             window.returnedHome=0;window.mutationsStarted=0;
@@ -93,7 +97,13 @@ class EditorActions(unittest.TestCase):
                 return route.fulfill(json=dict(ok=True, event=self.event))
             return route.fulfill(json=dict(ok=True, events=[self.event]))
         if path == '/api/event-data':
-            return route.fulfill(json=dict(ok=True, items={}, storage='cloudbase'))
+            self.data_reads += 1
+            if route.request.method == 'PUT':
+                value = route.request.post_data_json
+                revision = self.event_data.get(value['key'], {}).get('revision', 0) + 1
+                self.event_data[value['key']] = dict(value=value['value'], revision=revision)
+                return route.fulfill(json=dict(ok=True, revision=revision, storage='cloudbase'))
+            return route.fulfill(json=dict(ok=True, items=self.event_data, storage='cloudbase'))
         if path == '/api/health':
             return route.fulfill(json=dict(ok=True, cloudEnabled=True, cloudDatabaseConnected=True))
         if path == '/api/session':
@@ -123,19 +133,20 @@ class EditorActions(unittest.TestCase):
         self.page.keyboard.press('Escape')
         self.assertFalse(dialog.is_visible())
 
-    def test_registration_list_follows_unsaved_checkbox_and_saved_setting(self):
+    def test_registration_actions_follow_unsaved_select_and_saved_setting(self):
         self.event['signupOptions'] = [dict(name='四驱组', fee='3000', unit='车')]
         self.page.reload(wait_until='networkidle')
-        checkbox = self.page.get_by_role('checkbox', name='开启报名', exact=True)
+        registration = self.page.get_by_role('combobox', name='开启报名', exact=True)
         for enabled in [False, True, False]:
-            checkbox.set_checked(enabled)
+            registration.select_option('yes' if enabled else 'no')
             self.button('手机预览').click()
             dialog = self.page.get_by_role('dialog', name='赛事手机预览')
             self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), int(enabled))
             self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
             self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
-            self.assertEqual(dialog.get_by_role('button', name='查看赛事详情', exact=True).count(), 1)
-            self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), 1)
+            self.assertEqual(dialog.get_by_role('button', name='立即报名', exact=True).count(), int(enabled))
+            self.assertEqual(dialog.get_by_role('button', name='查看成绩详情', exact=True).count(), int(not enabled))
+            self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), int(not enabled))
             self.page.keyboard.press('Escape')
         self.save()
         self.page.reload(wait_until='networkidle')
@@ -152,7 +163,7 @@ class EditorActions(unittest.TestCase):
             self.button('手机预览').click()
             dialog = self.page.get_by_role('dialog', name='赛事手机预览')
             self.assertEqual(dialog.locator('.race-phone-signup-row').count(), 0)
-            self.assertEqual(dialog.get_by_role('button', name='查看赛事详情', exact=True).count(), 1)
+            self.assertEqual(dialog.get_by_role('button', name='查看成绩详情', exact=True).count(), 1)
             self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), 0)
             self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), int(enabled is not False))
             self.assertTrue(dialog.locator('.race-phone-scroll').evaluate('el=>el.scrollWidth<=el.clientWidth'))
@@ -349,54 +360,55 @@ class EditorActions(unittest.TestCase):
         self.page.wait_for_function('window.returnedHome===1')
         self.assertEqual(self.requests[-1], ('DELETE', dict(eventId=EVENT['id'])))
 
-    def test_registration_checkbox_position_size_reset_and_cloud_round_trip(self):
-        checkbox = self.page.get_by_role('checkbox', name='开启报名', exact=True)
-        checkbox.wait_for(timeout=5000)
-        options = self.page.locator('.event-field-option')
-        self.assertEqual(options.count(), 2)
-        styles = options.evaluate_all('''nodes=>nodes.map(node=>{
-            const input=node.querySelector('input'), style=getComputedStyle(node), box=input.getBoundingClientRect(), row=node.getBoundingClientRect();
-            return {fontSize:style.fontSize,lineHeight:style.lineHeight,alignItems:style.alignItems,boxWidth:box.width,boxHeight:box.height,boxCenter:box.top+box.height/2,rowCenter:row.top+row.height/2};
-        })''')
-        self.assertEqual([item['fontSize'] for item in styles], ['18px', '18px'])
-        self.assertEqual([item['lineHeight'] for item in styles], ['24px', '24px'])
-        self.assertEqual([item['alignItems'] for item in styles], ['center', 'center'])
-        self.assertEqual([item['boxWidth'] for item in styles], [20, 20])
-        self.assertEqual([item['boxHeight'] for item in styles], [20, 20])
-        for item in styles:
-            self.assertLess(abs(item['boxCenter'] - item['rowCenter']), 0.5)
+    def test_registration_select_layout_reset_and_cloud_round_trip(self):
+        registration = self.page.get_by_role('combobox', name='开启报名', exact=True)
+        registration.wait_for(timeout=5000)
         for width, height in [(1280, 800), (1920, 1080), (2560, 1600)]:
             self.page.set_viewport_size(dict(width=width, height=height))
-            boxes = options.locator('input').evaluate_all('nodes=>nodes.map(node=>{const box=node.getBoundingClientRect();return {x:box.x,y:box.y,width:box.width,height:box.height}})')
-            self.assertLess(abs(boxes[0]['y'] - boxes[1]['y']), 0.5, '两个勾选框应处于同一行')
-            fonts = options.evaluate_all('nodes=>nodes.map(node=>getComputedStyle(node).fontSize)')
-            self.assertEqual(fonts[0], fonts[1])
-        self.page.set_viewport_size(dict(width=1024, height=768))
-        boxes = options.locator('input').evaluate_all('nodes=>nodes.map(node=>node.getBoundingClientRect().x)')
-        self.assertLess(abs(boxes[0] - boxes[1]), 0.5, '窄窗口下两个勾选框应上下对齐')
+            fields = self.page.locator('.event-basic-fields')
+            city = fields.get_by_text('举办城市', exact=True).locator('..').bounding_box()
+            enabled = fields.get_by_text('开启报名', exact=True).locator('..').bounding_box()
+            self.assertLess(abs(city['y'] - enabled['y']), 0.5, '城市和开启报名应处于同一行')
+            controls = fields.locator('.event-basic-control').evaluate_all('nodes=>nodes.map(node=>node.getBoundingClientRect().height)')
+            self.assertEqual(len(controls), 4)
+            self.assertLess(max(controls) - min(controls), 0.5, '四个控件应等高')
+            self.assertFalse(self.page.evaluate('document.documentElement.scrollWidth>innerWidth'))
         self.page.set_viewport_size(dict(width=1280, height=800))
-        self.assertFalse(checkbox.is_checked())
-        city_field = self.page.get_by_text('举办城市', exact=True).locator('..')
-        city_control = city_field.locator(':scope > div > div').first.bounding_box()
-        box = checkbox.bounding_box()
-        self.assertGreaterEqual(box['y'], city_control['y'] + city_control['height'])
-        hidden_box = self.page.get_by_role('checkbox', name='隐藏报名人数').bounding_box()
-        self.assertEqual(box['width'], hidden_box['width'])
-        self.assertEqual(box['height'], hidden_box['height'])
-        self.assertLessEqual(box['height'], 20)
-        checkbox.check()
+        self.assertEqual(registration.input_value(), 'no')
+
+        registration.select_option('yes')
         self.button('重置').click()
-        self.assertFalse(checkbox.is_checked())
-        checkbox.check()
+        self.assertEqual(registration.input_value(), 'no')
+        registration.select_option('yes')
+        self.page.get_by_role('checkbox', name='隐藏报名人数').check()
         saved = self.save()
         self.assertIs(saved['registrationEnabled'], True)
+        self.assertIs(saved['hideSignupCount'], True)
         self.page.reload(wait_until='networkidle')
-        self.assertTrue(checkbox.is_checked())
-        checkbox.uncheck()
+        self.assertEqual(registration.input_value(), 'yes')
+        registration.select_option('no')
         saved = self.save(publish=True)
         self.assertIs(saved['registrationEnabled'], False)
+        self.assertIs(saved['published'], True)
         self.page.reload(wait_until='networkidle')
-        self.assertFalse(checkbox.is_checked())
+        self.assertEqual(registration.input_value(), 'no')
+
+    def test_signup_manager_reads_mini_program_rows_and_refreshes_without_closing_editor(self):
+        self.event['signupOptions'] = [dict(name='四驱组', fee='3000', unit='车')]
+        key = 'signup-' + EVENT['id']
+        self.event_data[key] = dict(revision=1, value=[dict(id='mini-1', 组别='四驱组', 姓名='小程序车手', 赛号='23')])
+        self.page.reload(wait_until='networkidle')
+        self.page.get_by_text('报名管理', exact=True).click()
+        self.page.get_by_text('小程序车手', exact=True).wait_for(timeout=10000)
+        self.event_data[key] = dict(revision=2, value=self.event_data[key]['value'] + [dict(id='mini-2', 组别='四驱组', 姓名='新增车手', 赛号='24')])
+        self.page.evaluate("window.dispatchEvent(new Event('focus'))")
+        self.page.get_by_text('新增车手', exact=True).wait_for(timeout=10000)
+        self.button('添加报名').click()
+        before = self.data_reads
+        self.page.evaluate("window.dispatchEvent(new Event('focus'))")
+        self.page.wait_for_timeout(250)
+        self.assertEqual(self.data_reads, before)
+        self.assertTrue(self.page.get_by_text('报名信息', exact=True).is_visible())
 
     def test_group_save_preserves_event_registration_switch(self):
         self.event['groups'] = ['四驱组']

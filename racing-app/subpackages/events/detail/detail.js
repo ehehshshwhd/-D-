@@ -336,11 +336,12 @@ Page({
     }
     if (query.fromShare) this.recordShareOpen(query.fromShare)
   },
-  loadPublishedEvent(id) {
+  loadPublishedEvent(id, silent) {
+    if (this._eventLoading) return this._eventLoading
     const requestId = (this._eventRequestId || 0) + 1
     this._eventRequestId = requestId
-    this.safeSetData({ eventConfigError: '', eventCloudReady: false, canAccessWork: false })
-    container.call('/api/public/events').then(readEventList).then(events => {
+    if (!silent) this.safeSetData({ eventConfigError: '', eventCloudReady: false, canAccessWork: false })
+    this._eventLoading = container.call('/api/public/events').then(readEventList).then(events => {
       if (this.__unloaded || this._eventRequestId !== requestId) return
       const record = events.find(item => String(item && (item.id || item._id) || '') === String(id))
       if (!record) {
@@ -349,7 +350,8 @@ Page({
         // The old page remains available only when the network request itself
         // fails (see catch below), so an offline user can still view cached UI.
         this.safeSetData({
-          event: { ...(this.data.event || {}), id: String(id), title: '', date: '', location: '', status: '', signup: [], contentBlocks: [] },
+          event: { id: String(id), title: '', date: '', location: '', status: '', signup: [], signupOptions: [], contentBlocks: [], registrationEnabled: false },
+          registrationPanel: '',
           detailReady: false,
           eventConfigReady: true,
           eventCloudReady: false,
@@ -415,7 +417,8 @@ Page({
         isGeneric: true
       }
       if (publishedEvent.id === 'suiping') this.safeSetData({ detailReady: false })
-      this.safeSetData({ eventConfigReady: true, eventCloudReady: true })
+      this.safeSetData({ eventConfigReady: true, eventCloudReady: true, eventConfigError: '' })
+      if (!publishedEvent.registrationEnabled) this.safeSetData({ registrationPanel: '' })
       if (!publishedEvent.workBackendEnabled) this.safeSetData({ canAccessWork: false })
       // Publish the full record before resolving temporary image URLs. The
       // cover and body image requests can finish in either order.
@@ -425,6 +428,8 @@ Page({
       this.resolveEventDetailPageImages(publishedEvent)
       this.loadWorkAccess()
     }).catch(error => {
+      if (this.__unloaded || this._eventRequestId !== requestId) return
+      this.safeSetData({ eventCloudReady: false, canAccessWork: false, registrationPanel: '' })
       // Legacy detail content can remain visible offline, but work access
       // stays closed until the current cloud event has been verified.
       console.warn('读取赛事详情失败，继续显示内置内容', error)
@@ -434,7 +439,8 @@ Page({
       } else {
         this.safeSetData({ eventConfigReady: true, eventConfigError: '赛事详情读取失败，请检查网络后重试。' })
       }
-    })
+    }).finally(() => { this._eventLoading = null })
+    return this._eventLoading
   },
   loadPublishedResults(eventId) {
     const requestId = (this._scoreRequestId || 0) + 1
@@ -581,8 +587,77 @@ Page({
     this.loadPublishedEvent(this.data.id)
   },
   onShow() {
-    if (!this.data.event || !this.data.event.id) return
-    this.loadWorkAccess()
+    this._detailVisible = true
+    if (!normalizeEventId(this.data.id)) return
+    this.refreshPublishedEvent()
+  },
+  refreshPublishedEvent() {
+    if (!this._detailVisible || this.__unloaded) return
+    if (this._publicationTimer) clearTimeout(this._publicationTimer)
+    return this.loadPublishedEvent(this.data.id, true).finally(() => {
+      if (this._publicationTimer) clearTimeout(this._publicationTimer)
+      if (this._detailVisible && !this.__unloaded) this._publicationTimer = setTimeout(() => this.refreshPublishedEvent(), 10000)
+    })
+  },
+  onHide() {
+    this._detailVisible = false
+    if (this._publicationTimer) clearTimeout(this._publicationTimer)
+    this._publicationTimer = null
+  },
+  async openRegistration() {
+    if (!this.data.eventCloudReady || !this.data.event || this.data.event.registrationEnabled !== true) return
+    if (!auth.getUser()) { wx.navigateTo({ url: '/pages/login/login?from=profile' }); return }
+    const options = (this.data.event.signupOptions || []).filter(option => option.registrationEnabled !== false)
+    if (!options.length) { wx.showToast({ title: '暂无开放报名的组别', icon: 'none' }); return }
+    this._registrationRequestId = this._registrationRequestId || ('signup_'+Date.now()+'_'+Math.random().toString(36).slice(2,14))
+    this.safeSetData({ registrationPanel: 'form', registrationError: '', registrationRole: 'driver', registrationGroups: options.map(option=>option.name), registrationForm: this.data.registrationForm || { 组别: options[0].name }, registrationFields: ['姓名','赛号','车队','车型','排量','颜色','身份证','手机号','血型','国籍'], navigatorFields: ['领航员姓名','领航员身份证','领航员手机号','领航员血型','领航员国籍'] })
+    try {
+      const result = await this.callRegistration('getRegistrationProfiles')
+      this.safeSetData({ registrationProfiles: result.profiles || [], registrationProfileNames: (result.profiles || []).map(row=>row.姓名+' / '+(row.赛号 || '未填车号')) })
+    } catch (error) { this.safeSetData({ registrationError: error.message }) }
+  },
+  callRegistration(action, data) {
+    return this.callInteraction(action, data).then(result=>{
+      if (String(result.eventId || '') !== String(this.data.id)) throw new Error('报名响应赛事不一致，请重试')
+      return result
+    })
+  },
+  changeRegistrationField(event) {
+    const field = event.currentTarget.dataset.field
+    const allowed = [...(this.data.registrationFields || []), ...(this.data.navigatorFields || [])]
+    if (!allowed.includes(field)) return
+    this.safeSetData({ registrationForm: { ...this.data.registrationForm, [field]: event.detail.value } })
+  },
+  changeRegistrationGroup(event) {
+    const group = (this.data.registrationGroups || [])[Number(event.detail.value)]
+    if (group) this.safeSetData({ registrationForm: { ...this.data.registrationForm, 组别: group } })
+  },
+  changeRegistrationRole(event) { this.safeSetData({ registrationRole: event.currentTarget.dataset.role }) },
+  chooseRegistrationProfile(event) {
+    const profile = (this.data.registrationProfiles || [])[Number(event.detail.value)]
+    if (profile) this.safeSetData({ registrationForm: { ...this.data.registrationForm, ...profile } })
+  },
+  closeRegistration() { if (!this.data.registrationSubmitting) this.safeSetData({ registrationPanel: '' }) },
+  async openSignupList() {
+    if (!this.data.eventCloudReady || !this.data.event || this.data.event.registrationEnabled !== true) return
+    this.safeSetData({ registrationPanel: 'list', registrationError: '', registrationListLoading: true })
+    try {
+      const result = await this.callRegistration('listRegistrations')
+      this.safeSetData({ registrationRows: result.rows || [] })
+    } catch (error) { this.safeSetData({ registrationError: error.message }) }
+    finally { this.safeSetData({ registrationListLoading: false }) }
+  },
+  async submitRegistration() {
+    if (this.data.registrationSubmitting || this.data.registrationPanel !== 'form') return
+    this.safeSetData({ registrationSubmitting: true, registrationError: '' })
+    try {
+      await this.callRegistration('submitRegistration', { form: this.data.registrationForm, requestId: this._registrationRequestId })
+      this._registrationRequestId = null
+      this.safeSetData({ registrationForm: null })
+      wx.showToast({ title: '报名成功', icon: 'success' })
+      await this.openSignupList()
+    } catch (error) { this.safeSetData({ registrationError: error.message || '报名失败，请重试' }) }
+    finally { this.safeSetData({ registrationSubmitting: false }) }
   },
   hasWorkAccess(user) {
     if (!user) return false
@@ -824,6 +899,7 @@ Page({
     return { title: event.title || '赛事详情', query: 'id=' + (this.data.id || 'suiping') + '&fromShare=timeline' }
   },
   onUnload() {
+    this.onHide()
     this.__unloaded = true
     this.__viewToken = (this.__viewToken || 0) + 1
     if (this._detailTimer) clearTimeout(this._detailTimer)
