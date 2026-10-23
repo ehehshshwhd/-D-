@@ -394,6 +394,12 @@ main.event-info-single-card .form-col .mt-\[2px\]{font-size:16px;line-height:1.6
  main.event-info-single-card .form-col input{font-size:20px}
  main.event-info-single-card .form-col .mt-\[2px\]{font-size:17px}
 }
+ /* Event options use one shared row so their text and checkboxes keep the same baseline. */
+ main.event-info-single-card .form-col .event-field-help-stack{font-size:16px;line-height:24px}
+ main.event-info-single-card .form-col .event-field-help-text{display:block;min-height:24px;line-height:24px}
+ main.event-info-single-card .form-col .event-field-option{display:flex;align-items:center;gap:8px;width:auto!important;min-height:24px;margin-top:12px;padding:0!important;font-size:18px!important;line-height:24px;color:#303e55;white-space:nowrap}
+ main.event-info-single-card .form-col .event-field-option input[type=checkbox]{width:20px!important;height:20px!important;flex:0 0 20px;margin:0;accent-color:#409eff}
+ @media(min-width:1800px){main.event-info-single-card .form-col .event-field-option{font-size:20px!important}}
 @media(max-width:760px){body,input,button,select,textarea{font-size:16px}header.relative>nav>a{font-size:16px}aside.w-\[266px\]>div{font-size:16px;height:48px}main table,main th{font-size:16px!important}}
 /* All admin views share the available viewport. At the wide desktop size in
    the reference, the event list uses six evenly sized cards; smaller screens
@@ -1398,8 +1404,8 @@ function InfoTab({ ev, onHome }) {
         <Section title="基础信息" />
         <Row>
           <Col span={8} sm={24}><Field label="赛事标题" required><TextInput value={f.title} onChange={set("title")} max={120} placeholder="请输入赛事标题" /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="赛事类型" help={<><span>可留空继承父级</span><label className="mt-3 flex items-center gap-2 cursor-pointer"><input type="checkbox" className="h-4 w-4 accent-[#409eff]" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></>}><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="举办城市" help={<label className="mt-3 flex items-center gap-2 cursor-pointer"><input type="checkbox" className="h-4 w-4 accent-[#409eff]" checked={f.registrationEnabled} onChange={e=>set("registrationEnabled")(e.target.checked)} />开启报名</label>}><CityPicker value={f.city} onChange={set("city")} /></Field></Col>
+          <Col span={8} sm={12}><Field auto label="赛事类型" help={<div className="event-field-help-stack"><span className="event-field-help-text">可留空继承父级</span><label className="event-field-option"><input type="checkbox" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></div>}><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
+          <Col span={8} sm={12}><Field auto label="举办城市" help={<label className="event-field-option"><input type="checkbox" checked={f.registrationEnabled} onChange={e=>set("registrationEnabled")(e.target.checked)} />开启报名</label>}><CityPicker value={f.city} onChange={set("city")} /></Field></Col>
         </Row>
 
         <Section title="时间设置" />

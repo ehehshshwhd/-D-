@@ -286,6 +286,19 @@ class EditorActions(unittest.TestCase):
     def test_registration_checkbox_position_size_reset_and_cloud_round_trip(self):
         checkbox = self.page.get_by_role('checkbox', name='开启报名', exact=True)
         checkbox.wait_for(timeout=5000)
+        options = self.page.locator('.event-field-option')
+        self.assertEqual(options.count(), 2)
+        styles = options.evaluate_all('''nodes=>nodes.map(node=>{
+            const input=node.querySelector('input'), style=getComputedStyle(node), box=input.getBoundingClientRect(), row=node.getBoundingClientRect();
+            return {fontSize:style.fontSize,lineHeight:style.lineHeight,alignItems:style.alignItems,boxWidth:box.width,boxHeight:box.height,boxCenter:box.top+box.height/2,rowCenter:row.top+row.height/2};
+        })''')
+        self.assertEqual([item['fontSize'] for item in styles], ['18px', '18px'])
+        self.assertEqual([item['lineHeight'] for item in styles], ['24px', '24px'])
+        self.assertEqual([item['alignItems'] for item in styles], ['center', 'center'])
+        self.assertEqual([item['boxWidth'] for item in styles], [20, 20])
+        self.assertEqual([item['boxHeight'] for item in styles], [20, 20])
+        for item in styles:
+            self.assertLess(abs(item['boxCenter'] - item['rowCenter']), 0.5)
         self.assertFalse(checkbox.is_checked())
         city_field = self.page.get_by_text('举办城市', exact=True).locator('..')
         city_control = city_field.locator(':scope > div > div').first.bounding_box()
