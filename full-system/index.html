@@ -395,11 +395,16 @@ main.event-info-single-card .form-col .mt-\[2px\]{font-size:16px;line-height:1.6
  main.event-info-single-card .form-col .mt-\[2px\]{font-size:17px}
 }
  /* Event options use one shared row so their text and checkboxes keep the same baseline. */
- main.event-info-single-card .form-col .event-field-help-stack{font-size:16px;line-height:24px}
- main.event-info-single-card .form-col .event-field-help-text{display:block;min-height:24px;line-height:24px}
- main.event-info-single-card .form-col .event-field-option{display:flex;align-items:center;gap:8px;width:auto!important;min-height:24px;margin-top:12px;padding:0!important;font-size:18px!important;line-height:24px;color:#303e55;white-space:nowrap}
+ main.event-info-single-card .event-basic-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:0 -14px}
+ main.event-info-single-card .event-basic-fields>.form-col{width:100%!important}
+ main.event-info-single-card .event-basic-fields>.form-col:last-child{align-self:end}
+ main.event-info-single-card .form-col .event-field-option{display:flex;align-items:center;gap:8px;width:auto!important;min-height:24px;margin-top:12px;padding:0!important;font-size:18px!important;line-height:24px;white-space:nowrap;cursor:pointer}
+ main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin:0 0 24px 156px}
  main.event-info-single-card .form-col .event-field-option input[type=checkbox]{width:20px!important;height:20px!important;flex:0 0 20px;margin:0;accent-color:#409eff}
  @media(min-width:1800px){main.event-info-single-card .form-col .event-field-option{font-size:20px!important}}
+ @media(max-width:1199px){main.event-info-single-card .event-basic-fields{grid-template-columns:1fr;margin:0 -20.5px}}
+ @media(max-width:1100px){main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin-left:130px}}
+ @media(max-width:760px){main.event-info-single-card .event-basic-fields>.form-col>.event-field-option{margin-left:0}}
 @media(max-width:760px){body,input,button,select,textarea{font-size:16px}header.relative>nav>a{font-size:16px}aside.w-\[266px\]>div{font-size:16px;height:48px}main table,main th{font-size:16px!important}}
 /* All admin views share the available viewport. At the wide desktop size in
    the reference, the event list uses six evenly sized cards; smaller screens
@@ -1402,11 +1407,12 @@ function InfoTab({ ev, onHome }) {
     <>
       <div className="flex-1 min-h-0 overflow-y-auto thin-scroll mt-[11px] pl-[26px] pr-[34px] pt-[32px] pb-[30px]">
         <Section title="基础信息" />
-        <Row>
+        <div className="event-basic-fields">
           <Col span={8} sm={24}><Field label="赛事标题" required><TextInput value={f.title} onChange={set("title")} max={120} placeholder="请输入赛事标题" /></Field></Col>
-          <Col span={8} sm={12}><Field auto label="赛事类型" help={<div className="event-field-help-stack"><span className="event-field-help-text">可留空继承父级</span><label className="event-field-option"><input type="checkbox" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></div>}><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
+          <Col span={8} sm={12}><Field auto label="赛事类型" help="可留空继承父级"><Select value={f.type} onChange={set("type")} options={["AB道", "多车齐发", "拉力赛", "T2", "T3", "COT"]} /></Field></Col>
           <Col span={8} sm={12}><Field auto label="举办城市" help={<label className="event-field-option"><input type="checkbox" checked={f.registrationEnabled} onChange={e=>set("registrationEnabled")(e.target.checked)} />开启报名</label>}><CityPicker value={f.city} onChange={set("city")} /></Field></Col>
-        </Row>
+          <Col span={8} sm={12}><label className="event-field-option"><input type="checkbox" checked={f.hideSignupCount} onChange={e=>set("hideSignupCount")(e.target.checked)} />隐藏报名人数</label></Col>
+        </div>
 
         <Section title="时间设置" />
         <Row>

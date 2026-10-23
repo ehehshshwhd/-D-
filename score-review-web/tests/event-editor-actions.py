@@ -299,6 +299,16 @@ class EditorActions(unittest.TestCase):
         self.assertEqual([item['boxHeight'] for item in styles], [20, 20])
         for item in styles:
             self.assertLess(abs(item['boxCenter'] - item['rowCenter']), 0.5)
+        for width, height in [(1280, 800), (1920, 1080), (2560, 1600)]:
+            self.page.set_viewport_size(dict(width=width, height=height))
+            boxes = options.locator('input').evaluate_all('nodes=>nodes.map(node=>{const box=node.getBoundingClientRect();return {x:box.x,y:box.y,width:box.width,height:box.height}})')
+            self.assertLess(abs(boxes[0]['y'] - boxes[1]['y']), 0.5, '两个勾选框应处于同一行')
+            fonts = options.evaluate_all('nodes=>nodes.map(node=>getComputedStyle(node).fontSize)')
+            self.assertEqual(fonts[0], fonts[1])
+        self.page.set_viewport_size(dict(width=1024, height=768))
+        boxes = options.locator('input').evaluate_all('nodes=>nodes.map(node=>node.getBoundingClientRect().x)')
+        self.assertLess(abs(boxes[0] - boxes[1]), 0.5, '窄窗口下两个勾选框应上下对齐')
+        self.page.set_viewport_size(dict(width=1280, height=800))
         self.assertFalse(checkbox.is_checked())
         city_field = self.page.get_by_text('举办城市', exact=True).locator('..')
         city_control = city_field.locator(':scope > div > div').first.bounding_box()
