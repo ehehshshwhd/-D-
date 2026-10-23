@@ -208,8 +208,13 @@ function cleanEvent(input, id) {
   const source = input || {}
   const stageNames = cleanStageNames(source.stageNames)
   const allowedStages = stageNames.length ? stageNames : STAGES
+  // Older editor builds sent these UI aliases alongside the canonical fields.
+  // They duplicate the complete detail document and can push an otherwise
+  // valid event over CloudBase's single-document limit. Keep the storage
+  // document canonical so old clients remain safe while they are refreshed.
+  const uiOnlyFields = new Set(['content', 'form', 'dates', 'img', 'displayId', 'isNew'])
   return {
-    ...Object.fromEntries(Object.entries(source).filter(([key]) => key !== '_id')),
+    ...Object.fromEntries(Object.entries(source).filter(([key]) => key !== '_id' && !uiOnlyFields.has(key))),
     id: validateEventId(id || source.id || ''),
     title: String(source.title || '').trim().slice(0, 160),
     dateStart: String(source.dateStart || '').slice(0, 20),
@@ -501,7 +506,6 @@ async function saveEvent(input) {
   if (!isDraft && !event.title) throw new Error('请填写赛事名称')
   if (!isDraft && (!event.dateStart || !event.dateEnd)) throw new Error('请填写赛事开始和结束日期')
   if (!isDraft && !event.location) throw new Error('请填写赛事地点')
-  if (Buffer.byteLength(JSON.stringify(event), 'utf8') > 700 * 1024) throw new Error('赛事详情超过 CloudBase 单文档安全大小，请减少正文文字/图片数量后再保存')
   const query = await db.collection('events').where({ id }).limit(2).get()
   if (query.data && query.data.length > 1) throw new Error(`云端赛事 ID 重复：${id}；未继续保存以避免覆盖错误赛事`)
   let previous = query.data && query.data[0]
@@ -522,9 +526,9 @@ async function saveEvent(input) {
   }
   const publishedAt = event.published ? asDate(previous && previous.publishedAt) : null
   const createdAt = asDate(previous && previous.createdAt)
-  const data = { ...(previous || {}), ...event, id, publishedAt, updatedAt: now, createdAt }
-  delete data._id
-  if (previous) await db.collection('events').doc(previous._id).update(data)
+  const data = { ...cleanEvent({ ...(previous || {}), ...event }, id), publishedAt, updatedAt: now, createdAt }
+  if (Buffer.byteLength(JSON.stringify(data), 'utf8') > 700 * 1024) throw new Error('赛事详情超过 CloudBase 单文档安全大小，请减少正文文字/图片数量后再保存')
+  if (previous) await db.collection('events').doc(previous._id).set(data)
   else await db.collection('events').add(data)
   const verified = await db.collection('events').where({ id }).limit(2).get()
   if (verified.data && verified.data.length > 1) throw new Error(`赛事写入后发现重复 ID：${id}；请先清理重复记录`)

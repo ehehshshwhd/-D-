@@ -89,7 +89,7 @@ class EditorActions(unittest.TestCase):
                 if self.fail_next:
                     self.fail_next = False
                     return route.fulfill(status=503, json=dict(ok=False, message='测试云端暂不可用'))
-                self.event = {**self.event, **payload}
+                self.event = {**self.event, **payload, 'id': payload.get('id') or 'saved-event', 'isNew': False}
                 return route.fulfill(json=dict(ok=True, event=self.event))
             return route.fulfill(json=dict(ok=True, events=[self.event]))
         if path == '/api/event-data':
@@ -141,6 +141,28 @@ class EditorActions(unittest.TestCase):
         self.assertNotIn('form', self.requests[-1][1])
         self.assertNotIn('dates', self.requests[-1][1])
         self.assertNotIn('img', self.requests[-1][1])
+
+    def test_new_event_save_removes_temporary_local_draft(self):
+        temporary_id = 'temporary-draft-1'
+        self.event = {**EVENT, 'id': temporary_id, 'isNew': True, 'title': ''}
+        self.page.reload(wait_until='networkidle')
+        self.page.get_by_placeholder('请输入赛事标题').wait_for(timeout=30000)
+        self.page.get_by_placeholder('请输入赛事标题').fill('新赛事')
+        self.page.locator('[data-date="start"]').fill('2026-10-31')
+        self.page.locator('[data-date="end"]').fill('2026-11-02')
+        self.page.locator('[data-date="deadline"]').fill('2026-10-22')
+        self.button('提交并返回').click()
+        self.page.wait_for_function('window.returnedHome===1')
+        drafts = self.page.evaluate("JSON.parse(localStorage.getItem('race-events') || '[]')")
+        self.assertEqual([item['id'] for item in drafts], ['saved-event'])
+
+    def test_save_from_source_mode_saves_html_instead_of_escaped_code(self):
+        self.page.locator('[role="toolbar"] button').filter(has_text='HTML').click()
+        self.page.locator('[data-editor]').fill('<p style="text-align:center">新的居中正文</p>')
+        saved = self.save()
+        self.assertIn('新的居中正文', saved['detailPageHtml'])
+        self.assertIn('<p style="text-align:center">', saved['detailPageHtml'])
+        self.assertNotIn('&lt;p', saved['detailPageHtml'])
 
     def test_legacy_paragraphs_align_to_editor_and_survive_save_and_preview(self):
         # Migrated phone-preview paragraphs retain their old measured pixel width.

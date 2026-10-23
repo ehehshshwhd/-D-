@@ -12,6 +12,7 @@ test('event registration and signup-count visibility survive cloud save, public 
     where: filter => ({ limit: () => ({ get: async () => ({ data: [...records.values()].filter(record => record.id === filter.id) }) }) }),
     doc: id => ({
       get: async () => ({ data: records.get(id) || null }),
+      set: async value => { records.set(id, { _id: id, ...value }) },
       update: async value => { records.set(id, { ...records.get(id), ...value }) }
     }),
     add: async value => { records.set(value.id, { _id: value.id, ...value }) }
