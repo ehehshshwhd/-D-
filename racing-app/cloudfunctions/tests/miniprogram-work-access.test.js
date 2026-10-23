@@ -326,7 +326,7 @@ function detailPage(user) {
   return harness
 }
 
-test('published event can hide every signup count while retaining fees, units and notes', async () => {
+test('signup counts follow registration enablement and ignore the retired hide-count setting', async () => {
   const { page, state } = detailPage(null)
   const event = {
     id: 'event-new', title: '测试赛事', hideSignupCount: true,
@@ -337,18 +337,18 @@ test('published event can hide every signup count while retaining fees, units an
     ]
   }
   state.events = [event]
-  for (const hidden of [true, false, undefined]) {
-    event.hideSignupCount = hidden
+  for (const enabled of [true, false, undefined]) {
+    event.registrationEnabled = enabled
     page.loadPublishedEvent(event.id)
     await tick()
     await tick()
     assert.equal(page.data.eventCloudReady, true)
     const text = Array.from(page.data.event.signupOptions, item => item.displayText)
-    assert.equal(text.some(value => value.includes('已报')), hidden !== true)
+    assert.equal(text.some(value => value.includes('已报')), enabled === true)
     assert.ok(text[0].includes('四驱组 ¥ 3000/辆'))
     assert.ok(text[0].includes('（含保险）'))
     assert.ok(text[1].includes('女子组 ¥ 600/人'))
-    if (hidden !== true) {
+    if (enabled === true) {
       assert.ok(text[0].includes('（已报12辆）'))
       assert.ok(text[1].includes('（已报3人）'))
     }

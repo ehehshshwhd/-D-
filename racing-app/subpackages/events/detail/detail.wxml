@@ -36,14 +36,14 @@
         <view wx:if="{{event.notice}}" class="notice" bindtap="showNotice"><text>{{event.notice}}</text><text class="notice-arrow">›</text></view>
       </view>
 
-      <view wx:if="{{event && event.signup && event.signup.length}}" class="section signup-section">
+      <view wx:if="{{event && event.registrationEnabled && event.signup && event.signup.length}}" class="section signup-section">
         <view class="section-title">{{event.sectionTitles.signup || '赛事报名'}}</view>
         <view class="signup-list">
           <view class="signup-row" wx:for="{{event.signup}}" wx:key="*this"><text>{{item}}</text></view>
         </view>
       </view>
 
-      <view wx:if="{{event && event.isDynamic && (event.registrationNote || (event.signupOptions && event.signupOptions.length))}}" class="section signup-section generic-signup-section">
+      <view wx:if="{{event && event.registrationEnabled && event.isDynamic && (event.registrationNote || (event.signupOptions && event.signupOptions.length))}}" class="section signup-section generic-signup-section">
         <view class="section-title">{{event.sectionTitles.signup || '赛事报名'}}</view>
         <view wx:if="{{event.registrationNote}}" class="prose generic-detail-copy">{{event.registrationNote}}</view>
         <view wx:if="{{event.signupOptions && event.signupOptions.length}}" class="signup-list">

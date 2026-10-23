@@ -4,7 +4,7 @@ const fields={姓名:80,赛号:12,车队:100,车型:80,排量:40,颜色:40,身�
 function createRegistrationService({db,ensureCollection,getStoredUser}){
   async function read(collection,id){
     try{const result=await collection.doc(id).get();return result&&result.data||null}
-    catch(error){if(/document.*(not found|not exist|不存在)/i.test(error.message||error.errMsg||''))return null;throw error}
+    catch(error){if(/document.*(not found|not exist|不存在)/i.test(String(error&&(error.message||error.errMsg)||error)))return null;throw error}
   }
   function requireOpen(event,submitting){
     if(!event||event.published!==true||event.deleted||event.deletedAt)throw new Error('赛事未发布或已下架')

@@ -142,8 +142,10 @@ class EditorActions(unittest.TestCase):
             self.button('手机预览').click()
             dialog = self.page.get_by_role('dialog', name='赛事手机预览')
             self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), int(enabled))
-            self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
-            self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
+            self.assertEqual(dialog.locator('.race-phone-signup').count(), int(enabled))
+            if enabled:
+                self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
+                self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
             self.assertEqual(dialog.get_by_role('button', name='立即报名', exact=True).count(), int(enabled))
             self.assertEqual(dialog.get_by_role('button', name='查看成绩详情', exact=True).count(), int(not enabled))
             self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), int(not enabled))
@@ -363,6 +365,7 @@ class EditorActions(unittest.TestCase):
     def test_registration_select_layout_reset_and_cloud_round_trip(self):
         registration = self.page.get_by_role('combobox', name='开启报名', exact=True)
         registration.wait_for(timeout=5000)
+        self.assertEqual(self.page.get_by_role('checkbox', name='隐藏报名人数').count(), 0)
         for width, height in [(1280, 800), (1920, 1080), (2560, 1600)]:
             self.page.set_viewport_size(dict(width=width, height=height))
             fields = self.page.locator('.event-basic-fields')
@@ -380,10 +383,9 @@ class EditorActions(unittest.TestCase):
         self.button('重置').click()
         self.assertEqual(registration.input_value(), 'no')
         registration.select_option('yes')
-        self.page.get_by_role('checkbox', name='隐藏报名人数').check()
         saved = self.save()
         self.assertIs(saved['registrationEnabled'], True)
-        self.assertIs(saved['hideSignupCount'], True)
+        self.assertIs(saved['hideSignupCount'], False)
         self.page.reload(wait_until='networkidle')
         self.assertEqual(registration.input_value(), 'yes')
         registration.select_option('no')

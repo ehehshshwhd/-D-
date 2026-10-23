@@ -2,13 +2,13 @@ const assert=require('node:assert/strict')
 const {test}=require('node:test')
 const crypto=require('node:crypto')
 
-function setup(){
+function setup({missingDocumentError}={}){
   const docs=new Map()
   docs.set('events/e1',{_id:'e1',id:'race-1',published:true,registrationEnabled:true,signupOptions:[{name:'四驱组',fee:'3000',quota:'2'}]})
   const collection=name=>({
     where:query=>({limit:()=>({get:async()=>({data:[...docs.entries()].filter(([key,row])=>key.startsWith(name+'/')&&Object.entries(query).every(([k,v])=>row[k]===v)).map(([,row])=>structuredClone(row))})})}),
     doc:id=>({
-      get:async()=>({data:structuredClone(docs.get(name+'/'+id)||null)}),
+      get:async()=>{if(!docs.has(name+'/'+id)&&missingDocumentError)throw missingDocumentError;return {data:structuredClone(docs.get(name+'/'+id)||null)}},
       set:async({data})=>docs.set(name+'/'+id,{...structuredClone(data),_id:id}),
       update:async({data})=>docs.set(name+'/'+id,{...docs.get(name+'/'+id),...structuredClone(data),_id:id})
     })
@@ -60,4 +60,13 @@ test('concurrent signups retain both rows, enforce unique car numbers and group 
   await Promise.all([submit(),handle({action:'submitRegistration',eventId:'race-1',requestId:'request-two',form:{组别:'四驱组',赛号:'24',姓名:'李四',手机号:'13900139000'}},'user-2')])
   await assert.rejects(handle({action:'submitRegistration',eventId:'race-1',requestId:'request-three',form:{组别:'四驱组',赛号:'23',姓名:'王五',手机号:'13900139000'}},'user-3'),/赛号/)
   await assert.rejects(handle({action:'submitRegistration',eventId:'race-1',requestId:'request-four',form:{组别:'四驱组',赛号:'25',姓名:'王五',手机号:'13900139000'}},'user-3'),/上限/)
+})
+
+test('first signup handles the real SDK missing-document error and propagates network errors',async()=>{
+  for(const missingDocumentError of [new Error('document with _id missing does not exist'),'document with _id missing does not exist']){
+    const {submit}=setup({missingDocumentError})
+    assert.equal((await submit()).revision,1)
+  }
+  const {submit}=setup({missingDocumentError:new Error('database network timeout')})
+  await assert.rejects(submit(),/network timeout/)
 })
