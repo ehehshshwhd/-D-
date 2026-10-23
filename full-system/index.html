@@ -602,7 +602,9 @@ function assignEventDisplayIds(events) {
 }
 function editorEventToCloudEvent(event, fields, dates, content) {
   const form = fields || {};
-  return { ...(event && typeof event === 'object' ? event : {}), id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), hideSignupCount: form.hideSignupCount === true, registrationEnabled: form.registrationEnabled === true, detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
+  const source = event && typeof event === 'object' ? event : {};
+  const { content: _content, form: _form, dates: _dates, img: _img, displayId: _displayId, isNew: _isNew, ...eventData } = source;
+  return { ...eventData, id: event?.isNew ? '' : String(event?.id || ''), title: String(form.title || '').trim(), type: String(form.type || '').trim(), level: String(form.level || event?.tag || '').trim(), status: String(event?.status || '即将开始'), dateStart: dates.start, dateEnd: dates.end, registrationDeadline: dates.deadline, location: String(form.city || form.address || '').trim(), address: String(form.address || '').trim(), contactName: String(form.contact || '').trim(), contactPhone: String(form.phone || '').trim(), contactWechat: String(form.wechat || '').trim(), hideSignupCount: form.hideSignupCount === true, registrationEnabled: form.registrationEnabled === true, detailPageHtml: content || '', detailPageConfigured: Boolean(content), coverUrl: String(event?.img || '').trim(), coverFileId: String(event?.coverFileId || '').trim(), published: false };
 }
 async function loadRemoteEvents() {
   if (!API_URL) return false;
@@ -614,7 +616,18 @@ async function loadRemoteEvents() {
 }
 async function saveEditorEvent(event, fields, dates, content, publish, coverFileId='') {
   if (!API_URL) return null;
-  const response = await fetch(`${API_URL}/api/events`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...editorEventToCloudEvent({ ...(event || {}), coverFileId }, fields, dates, content), saveMode: publish ? 'publish' : 'draft', published: Boolean(publish) }) });
+  const controller = new AbortController();
+  const timeout = Number(window.RACE_EDITOR_REQUEST_TIMEOUT_MS) > 0 ? Number(window.RACE_EDITOR_REQUEST_TIMEOUT_MS) : 20000;
+  const timer = setTimeout(() => controller.abort(), timeout);
+  let response;
+  try {
+    response = await fetch(`${API_URL}/api/events`, { method: 'POST', credentials: 'include', signal: controller.signal, headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ ...editorEventToCloudEvent({ ...(event || {}), coverFileId }, fields, dates, content), saveMode: publish ? 'publish' : 'draft', published: Boolean(publish) }) });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('云端保存超时，请检查网络后重试');
+    throw error;
+  } finally {
+    clearTimeout(timer);
+  }
   let payload = null; try { payload = await response.json(); } catch {}
   if (!response.ok || !payload?.ok || !payload.event) throw new Error(payload?.message || `保存赛事失败（${response.status}）`);
   const saved = cloudEventToEditorEvent(payload.event);

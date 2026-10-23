@@ -49,7 +49,10 @@ class EditorActions(unittest.TestCase):
             window.fetch=async(url,options)=>{
                 if(String(url).endsWith('/api/events')&&['POST','DELETE'].includes(options?.method)){
                     window.mutationsStarted++;
-                    if(window.holdMutation)await new Promise(resolve=>window.releaseMutation=resolve);
+                    if(window.holdMutation)await new Promise((resolve,reject)=>{
+                        window.releaseMutation=resolve;
+                        options?.signal?.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});
+                    });
                 }
                 return originalFetch(url,options);
             };
@@ -132,7 +135,12 @@ class EditorActions(unittest.TestCase):
         dialog = self.page.get_by_role('dialog', name='赛事手机预览')
         self.assertEqual(dialog.locator('.race-phone-content').inner_html(), EVENT['detailPageHtml'])
         self.page.keyboard.press('Escape')
-        self.assertEqual(self.save()['detailPageHtml'], EVENT['detailPageHtml'])
+        saved = self.save()
+        self.assertEqual(saved['detailPageHtml'], EVENT['detailPageHtml'])
+        self.assertNotIn('content', self.requests[-1][1])
+        self.assertNotIn('form', self.requests[-1][1])
+        self.assertNotIn('dates', self.requests[-1][1])
+        self.assertNotIn('img', self.requests[-1][1])
 
     def test_legacy_paragraphs_align_to_editor_and_survive_save_and_preview(self):
         # Migrated phone-preview paragraphs retain their old measured pixel width.
@@ -215,6 +223,16 @@ class EditorActions(unittest.TestCase):
         self.page.wait_for_function('window.returnedHome===1')
         self.assertEqual(len(self.requests), 1)
         self.assertTrue(self.requests[0][1]['published'])
+
+    def test_save_timeout_restores_buttons_and_allows_retry(self):
+        self.page.evaluate('window.RACE_EDITOR_REQUEST_TIMEOUT_MS=50;window.holdMutation=true')
+        self.button('提交并返回').click()
+        self.page.wait_for_function('window.alerts.at(-1)?.includes("保存超时")', timeout=3000)
+        self.assertEqual(self.page.evaluate('window.returnedHome'), 0)
+        self.assertTrue(self.button('提交并返回').is_enabled())
+        self.assertTrue(self.button('发布到小程序').is_enabled())
+        self.page.evaluate('window.holdMutation=false')
+        self.assertFalse(self.save()['published'])
 
     def test_validation_and_save_failure_allow_retry(self):
         title = self.page.get_by_placeholder('请输入赛事标题')
