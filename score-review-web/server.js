@@ -113,7 +113,7 @@ function serve(res, urlPath) {
   }
   res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Content-Length': data.length, 'Cache-Control': 'no-store' }); res.end(data)
 }
-function body(req) { return new Promise((resolve, reject) => { let value = ''; req.on('data', chunk => { value += chunk; if (value.length > 8 * 1024 * 1024) reject(new Error('请求过大')) }); req.on('end', () => { try { resolve(value ? JSON.parse(value) : {}) } catch { reject(new Error('请求格式无效')) } }); req.on('error', reject) }) }
+function body(req) { return new Promise((resolve, reject) => { let value = ''; req.setEncoding('utf8'); req.on('data', chunk => { value += chunk; if (value.length > 8 * 1024 * 1024) reject(new Error('请求过大')) }); req.on('end', () => { try { resolve(value ? JSON.parse(value) : {}) } catch { reject(new Error('请求格式无效')) } }); req.on('error', reject) }) }
 function key(eventId, stage) { return `${validateEventId(eventId)}::${String(stage || '').toUpperCase()}` }
 function publicEventView(event) {
   // Return each editable event-detail section as its own field so the mini
