@@ -314,6 +314,19 @@ test('new-event entry displays only for authorized staff/admin, including SS20',
   }
 })
 
+test('closing registration preserves the authorized staff work entry and event navigation', async () => {
+  for (const registrationEnabled of [false, true]) {
+    const { page, calls } = detailPage({ role: 'staff', stagePermissions: ['SS20'] })
+    page.data.event.registrationEnabled = registrationEnabled
+    page.loadWorkAccess()
+    await tick()
+    assert.equal(page.data.canAccessWork, true)
+    page.openWorkBackend()
+    await tick()
+    assert.deepEqual(calls.navigate, ['/pages/work/work?eventId=event-new'])
+  }
+})
+
 test('entry closes on missing event, disabled work backend, and permission refresh failure', async () => {
   for (const failure of ['missing', 'disabled', 'role']) {
     const { page, state, calls } = detailPage({ role: 'admin' })

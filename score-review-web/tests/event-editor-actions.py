@@ -123,6 +123,41 @@ class EditorActions(unittest.TestCase):
         self.page.keyboard.press('Escape')
         self.assertFalse(dialog.is_visible())
 
+    def test_registration_list_follows_unsaved_checkbox_and_saved_setting(self):
+        self.event['signupOptions'] = [dict(name='四驱组', fee='3000', unit='车')]
+        self.page.reload(wait_until='networkidle')
+        checkbox = self.page.get_by_role('checkbox', name='开启报名', exact=True)
+        for enabled in [False, True, False]:
+            checkbox.set_checked(enabled)
+            self.button('手机预览').click()
+            dialog = self.page.get_by_role('dialog', name='赛事手机预览')
+            self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), int(enabled))
+            self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
+            self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
+            self.assertEqual(dialog.get_by_role('button', name='查看赛事详情', exact=True).count(), 1)
+            self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), 1)
+            self.page.keyboard.press('Escape')
+        self.save()
+        self.page.reload(wait_until='networkidle')
+        self.button('手机预览').click()
+        dialog = self.page.get_by_role('dialog', name='赛事手机预览')
+        self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), 0)
+        self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), 1)
+
+    def test_phone_actions_exist_without_signup_groups_and_respect_work_setting(self):
+        for enabled in [None, False]:
+            self.event['signupOptions'] = []
+            self.event['workBackendEnabled'] = enabled
+            self.page.reload(wait_until='networkidle')
+            self.button('手机预览').click()
+            dialog = self.page.get_by_role('dialog', name='赛事手机预览')
+            self.assertEqual(dialog.locator('.race-phone-signup-row').count(), 0)
+            self.assertEqual(dialog.get_by_role('button', name='查看赛事详情', exact=True).count(), 1)
+            self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), 0)
+            self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), int(enabled is not False))
+            self.assertTrue(dialog.locator('.race-phone-scroll').evaluate('el=>el.scrollWidth<=el.clientWidth'))
+            self.page.keyboard.press('Escape')
+
     def test_reset_restores_saved_content_for_preview_and_submit(self):
         self.page.get_by_placeholder('请输入赛事标题').fill('改过的标题')
         self.page.locator('[data-date="start"]').fill('2026-10-30')
