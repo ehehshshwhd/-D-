@@ -2,5 +2,5 @@
 module.exports={
   env:'cloud1-d5gurg39naf27d7a7',
   accountFunction:'account',
-  serviceName:'score-review-api'
+  serviceName:'score-review-api1112222333444'
 }
