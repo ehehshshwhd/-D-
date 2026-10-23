@@ -62,6 +62,13 @@ test('concurrent signups retain both rows, enforce unique car numbers and group 
   await assert.rejects(handle({action:'submitRegistration',eventId:'race-1',requestId:'request-four',form:{组别:'四驱组',赛号:'25',姓名:'王五',手机号:'13900139000'}},'user-3'),/上限/)
 })
 
+test('a displayed group with registration disabled cannot accept a forged signup',async()=>{
+  const {docs,submit}=setup()
+  docs.get('events/e1').signupOptions[0].registrationEnabled=false
+  await assert.rejects(submit(),/组别/)
+  assert.equal([...docs.keys()].filter(k=>k.startsWith('event_management_data/')).length,0)
+})
+
 test('first signup handles the real SDK missing-document error and propagates network errors',async()=>{
   for(const missingDocumentError of [new Error('document with _id missing does not exist'),'document with _id missing does not exist']){
     const {submit}=setup({missingDocumentError})

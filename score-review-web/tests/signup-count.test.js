@@ -23,7 +23,8 @@ test('event registration and signup-count visibility survive cloud save, public 
   require.cache[sdkPath] = { id: sdkPath, filename: sdkPath, loaded: true, exports: { init: () => ({ database: () => db }) } }
   delete require.cache[require.resolve('../cloud-store')]
   const store = require('../cloud-store')
-  const event = { id: 'signup-test', title: '测试赛事', dateStart: '2026-10-31', dateEnd: '2026-11-02', location: '资兴市', contentBlocks: [], published: true }
+  const event = { id: 'signup-test', title: '测试赛事', dateStart: '2026-10-31', dateEnd: '2026-11-02', location: '资兴市', contentBlocks: [], published: true,
+    signupOptions: [{ name: '团队组', fee: '1200/队', unit: '队', registrationEnabled: false }, { name: '体验组', fee: 0, unit: '次' }] }
   assert.equal((await store.saveEvent(event)).hideSignupCount, false)
   assert.equal(records.get(event.id).registrationEnabled, false)
   for (const hidden of [true, false]) {
@@ -34,6 +35,11 @@ test('event registration and signup-count visibility survive cloud save, public 
     assert.equal(records.get(event.id).registrationEnabled, hidden)
     assert.equal((await store.listEvents({ publishedOnly: true }))[0].hideSignupCount, hidden)
     assert.equal((await store.listEvents({ publishedOnly: true }))[0].registrationEnabled, hidden)
+    const options = (await store.listEvents({ publishedOnly: true }))[0].signupOptions
+    assert.equal(options[0].fee, '1200/队')
+    assert.equal(options[0].registrationEnabled, false)
+    assert.equal(options[1].fee, '0')
+    assert.equal(options[1].unit, '次')
   }
   for (const invalid of ['false', 'true', 1, {}, []]) {
     assert.throws(() => store.validateEventInput({ ...event, hideSignupCount: invalid }), /隐藏报名人数必须是布尔值/)

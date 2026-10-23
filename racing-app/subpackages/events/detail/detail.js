@@ -267,11 +267,11 @@ function normalizeSignupOptions(value, registrationEnabled = false) {
   if (value.some(item => !item || typeof item !== 'object' || Array.isArray(item))) throw new Error('报名选项格式无效')
   return value.map(item => {
     const name = String(item.name || '').trim()
-    const rawFee = String(item.fee || '').trim()
+    const rawFee = String(item.fee ?? '0').trim().replace(/\/车\s*$/, '/辆')
     const feeAmount = rawFee ? (rawFee.startsWith('¥') || rawFee.startsWith('￥') ? rawFee.replace(/^￥/, '¥') : `¥ ${rawFee}`) : ''
     const configuredUnit = String(item.unit || '').trim()
     const feeUnit = configuredUnit === '车' ? '辆' : configuredUnit || (/(?:场地赛|攀爬赛|女子组|专业组|新秀组)/.test(name) ? '人' : '辆')
-    const fee = feeAmount && !/\/(?:辆|人)(?:\s|$)/.test(feeAmount) ? `${feeAmount}/${feeUnit}` : feeAmount
+    const fee = feeAmount && !/\/[^/]+$/.test(feeAmount) ? `${feeAmount}/${feeUnit}` : feeAmount
     const note = String(item.note || '').trim()
     const registeredCount = Number.isFinite(Number(item.registeredCount)) && Number(item.registeredCount) >= 0 ? Math.floor(Number(item.registeredCount)) : 0
     const countNote = registrationEnabled === true ? `（已报${registeredCount}${feeUnit}）` : ''

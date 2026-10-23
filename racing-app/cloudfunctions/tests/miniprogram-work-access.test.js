@@ -333,7 +333,9 @@ test('signup counts follow registration enablement and ignore the retired hide-c
     signupOptions: [
       { name: '四驱组', fee: '3000', unit: '辆', registeredCount: 12, note: '含保险' },
       { name: '女子组', fee: '600', unit: '人', registeredCount: 3 },
-      { name: '公开组', fee: '1000', unit: '车', registeredCount: 5, note: '已报5辆' }
+      { name: '公开组', fee: '1000', unit: '车', registeredCount: 5, note: '已报5辆' },
+      { name: '团队组', fee: '1200/队', unit: '队', registrationEnabled: false },
+      { name: '体验组', fee: 0, unit: '次' }
     ]
   }
   state.events = [event]
@@ -348,6 +350,12 @@ test('signup counts follow registration enablement and ignore the retired hide-c
     assert.ok(text[0].includes('四驱组 ¥ 3000/辆'))
     assert.ok(text[0].includes('（含保险）'))
     assert.ok(text[1].includes('女子组 ¥ 600/人'))
+    assert.ok(text[3].includes('团队组 ¥ 1200/队'))
+    assert.ok(!text[3].includes('/队/队'))
+    assert.ok(text[4].includes('体验组 ¥ 0/次'))
+    const markup = fs.readFileSync(path.join(appRoot, 'subpackages/events/detail/detail.wxml'), 'utf8')
+    const condition = markup.match(/wx:if="\{\{([^}]+)\}\}" class="section signup-section generic-signup-section"/)[1]
+    assert.equal(Boolean(vm.runInNewContext(condition, { event: page.data.event })), true)
     if (enabled === true) {
       assert.ok(text[0].includes('（已报12辆）'))
       assert.ok(text[1].includes('（已报3人）'))
@@ -385,6 +393,18 @@ test('closing registration preserves the authorized staff work entry and event n
     await tick()
     assert.deepEqual(calls.navigate, ['/pages/work/work?eventId=event-new'])
   }
+})
+
+test('revoking work permission hides the entry and prevents navigation on click', async () => {
+  const { page, state, calls } = detailPage({ role: 'staff', stagePermissions: ['SS20'] })
+  page.loadWorkAccess()
+  await tick()
+  assert.equal(page.data.canAccessWork, true)
+  state.user = { role: 'user' }
+  page.openWorkBackend()
+  await tick()
+  assert.equal(page.data.canAccessWork, false)
+  assert.equal(calls.navigate.length, 0)
 })
 
 test('entry closes on missing event, disabled work backend, and permission refresh failure', async () => {

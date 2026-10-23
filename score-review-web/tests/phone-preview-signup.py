@@ -1,4 +1,4 @@
-"""Verify registration alone controls signup rows and counts in the phone preview."""
+"""Verify group fees always display while registration controls actions and counts."""
 import json
 import sys
 from pathlib import Path
@@ -14,7 +14,9 @@ event = dict(id='signup-test', title='测试赛事', type='拉力赛', dateStart
              location='资兴市', contactPhone='13269191919', published=True, hideSignupCount=True,
              signupOptions=[dict(name='四驱组', fee='3000', unit='辆', note='含保险'),
                             dict(name='女子组', fee='600', unit='人'),
-                            dict(name='公开组', fee='1000', unit='车', note='已报5辆')])
+                            dict(name='公开组', fee='1000', unit='车', note='已报5辆'),
+                            dict(name='团队组', fee='1200/队', unit='队', registrationEnabled=False),
+                            dict(name='体验组', fee=0, unit='次')])
 original = (ROOT / 'full-system/index.html').read_text(encoding='utf-8')
 saved_requests = []
 
@@ -61,11 +63,12 @@ with sync_playwright() as p:
         dialog = page.get_by_role('dialog', name='赛事手机预览')
         dialog.wait_for()
         rows = dialog.locator('.race-phone-signup-row').all_text_contents()
-        assert len(rows) == (0 if hidden else 3)
+        assert len(rows) == 5, rows
         assert any('已报' in row for row in rows) == (not hidden), rows
-        if not hidden:
-            assert '四驱组' in rows[0] and '¥ 3000/辆' in rows[0] and '（含保险）' in rows[0]
-            assert '女子组' in rows[1] and '¥ 600/人' in rows[1]
+        assert '四驱组' in rows[0] and '¥ 3000/辆' in rows[0] and '（含保险）' in rows[0]
+        assert '女子组' in rows[1] and '¥ 600/人' in rows[1]
+        assert '团队组' in rows[3] and '¥ 1200/队' in rows[3] and '/队/队' not in rows[3]
+        assert '体验组' in rows[4] and '¥ 0/次' in rows[4]
         assert dialog.locator('.race-phone-title').inner_text() == '测试赛事'
         assert '展示当前编辑内容，无需保存' not in dialog.inner_text()
         assert dialog.locator('header').count() == 0
@@ -102,4 +105,4 @@ with sync_playwright() as p:
     assert registration.input_value() == 'no'
     assert not errors, errors
     browser.close()
-    print('PASS: registration controls signup rows/counts, retired checkbox absent, save/reload/publish and preview close controls')
+    print('PASS: group fees always display; registration controls counts/actions; save/reload/publish and preview close controls')

@@ -142,10 +142,10 @@ class EditorActions(unittest.TestCase):
             self.button('手机预览').click()
             dialog = self.page.get_by_role('dialog', name='赛事手机预览')
             self.assertEqual(dialog.get_by_role('button', name='查看报名列表', exact=True).count(), int(enabled))
-            self.assertEqual(dialog.locator('.race-phone-signup').count(), int(enabled))
-            if enabled:
-                self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
-                self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
+            self.assertEqual(dialog.locator('.race-phone-signup').count(), 1)
+            self.assertIn('四驱组', dialog.locator('.race-phone-signup').inner_text())
+            self.assertIn('¥ 3000/辆', dialog.locator('.race-phone-signup').inner_text())
+            self.assertEqual('已报' in dialog.locator('.race-phone-signup').inner_text(), enabled)
             self.assertEqual(dialog.get_by_role('button', name='立即报名', exact=True).count(), int(enabled))
             self.assertEqual(dialog.get_by_role('button', name='查看成绩详情', exact=True).count(), int(not enabled))
             self.assertEqual(dialog.get_by_role('button', name='进入工作后台', exact=True).count(), int(not enabled))
@@ -423,6 +423,22 @@ class EditorActions(unittest.TestCase):
             self.button('提交并返回').click()
             self.page.wait_for_function("document.body.innerText.includes('已同步到云端，小程序将显示')")
             self.assertIs(self.requests[-1][1]['registrationEnabled'], enabled)
+
+    def test_closed_group_keeps_its_public_fee_when_saved(self):
+        self.event['groups'] = ['团队组']
+        self.event['visibleGroups'] = ['团队组']
+        self.event['signupOptions'] = [dict(name='团队组', fee='1200', unit='队', registrationEnabled=False)]
+        self.page.reload(wait_until='networkidle')
+        self.page.get_by_text('组别管理', exact=True).click()
+        self.button('编辑').click()
+        self.button('提交并返回').click()
+        self.page.wait_for_function("document.body.innerText.includes('已同步到云端，小程序将显示')")
+        saved = self.requests[-1][1]['signupOptions']
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0]['name'], '团队组')
+        self.assertEqual(saved[0]['fee'], '1200')
+        self.assertEqual(saved[0]['unit'], '队')
+        self.assertIs(saved[0]['registrationEnabled'], False)
 
 
 if __name__ == '__main__':

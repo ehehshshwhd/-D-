@@ -57,7 +57,7 @@ function cleanSignupOptions(value) {
     return {
       ...option,
       name: String(option.name || '').trim().slice(0, 120),
-      fee: String(option.fee || '').trim().slice(0, 80),
+      fee: String(option.fee ?? '').trim().slice(0, 80),
       quota: String(option.quota || '').trim().slice(0, 80),
       note: String(option.note || '').trim().slice(0, 500),
       unit: String(option.unit || '').trim().slice(0, 10),
