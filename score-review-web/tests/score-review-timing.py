@@ -74,6 +74,28 @@ with sync_playwright() as p:
     cells = page.locator('tbody tr').first.locator('td')
     assert cells.nth(6).inner_text() == '0:02:58.270'
     assert cells.nth(5).inner_text() == '0'
+    review = page.locator('.score-review')
+    typography = review.evaluate('''el => ({
+        titleSize:getComputedStyle(el.querySelector('h2')).fontSize,
+        weights:[...el.querySelectorAll('h2,h3,p,button,input,th,td')].map(node=>getComputedStyle(node).fontWeight),
+        buttonRadius:getComputedStyle(el.querySelector('button')).borderRadius,
+        background:getComputedStyle(el).backgroundColor
+    })''')
+    assert typography['titleSize'] == '34px', typography
+    assert set(typography['weights']) == {'700'}, typography
+    assert typography['buttonRadius'] == '12px', typography
+    assert typography['background'] == 'rgb(255, 255, 255)', typography
+    stats = review.locator(':scope > .grid')
+    assert stats.evaluate('el=>getComputedStyle(el).display') == 'grid'
+    assert len(stats.evaluate('el=>getComputedStyle(el).gridTemplateColumns.split(" ")')) == 3
+    page.get_by_role('button', name='导出成绩', exact=True).click()
+    for item in page.get_by_role('menuitem').all():
+        assert item.evaluate('el=>getComputedStyle(el).whiteSpace') == 'nowrap'
+    page.get_by_role('button', name='导出成绩', exact=True).click()
+    assert page.get_by_role('menu').count() == 0
+    page.get_by_role('button', name='导出成绩', exact=True).click()
+    page.get_by_role('heading', name='成绩审核', exact=True).click()
+    assert page.get_by_role('menu').count() == 0
     page.get_by_role('button', name='全屏').click()
     page.wait_for_function("getComputedStyle(document.querySelector('.score-review')).position === 'fixed'", timeout=1500)
     fullscreen = page.locator('.score-review').evaluate('el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}}')
@@ -86,6 +108,9 @@ with sync_playwright() as p:
 
     page.get_by_role('button', name='编辑', exact=True).click()
     dialog = page.get_by_role('dialog', name='编辑成绩')
+    assert dialog.locator('input').first.evaluate('el=>getComputedStyle(el).fontWeight') == '700'
+    editor_box = dialog.bounding_box()
+    assert editor_box['width'] == 580 and editor_box['y'] >= 0, editor_box
     duration = dialog.get_by_label('赛段用时（可直接修改）')
     dialog.get_by_label('收车时间', exact=True).fill('12:37:13.41')
     assert duration.input_value() == '0:02:59.270'
@@ -154,6 +179,22 @@ with sync_playwright() as p:
         button.click(trial=True)
     page.get_by_role('button', name='退出全屏', exact=True).click()
     page.wait_for_function("getComputedStyle(document.querySelector('.score-review')).position !== 'fixed'")
+    artifacts = ROOT.parent / '.racing-tools'
+    artifacts.mkdir(exist_ok=True)
+    for width, height in [(2560, 1600), (1280, 800)]:
+        page.set_viewport_size(dict(width=width, height=height))
+        review.evaluate('el=>el.scrollTop=0')
+        assert review.evaluate('el=>el.scrollWidth<=el.clientWidth+1')
+        page.screenshot(path=str(artifacts / f'score-review-reference-{width}.png'))
+    page.set_viewport_size(dict(width=700, height=1000))
+    review.evaluate('el=>el.scrollTop=0')
+    page.wait_for_function("matchMedia('(max-width:760px)').matches")
+    assert len(stats.evaluate('el=>getComputedStyle(el).gridTemplateColumns.split(" ")')) == 1, page.evaluate("({width:innerWidth, media:matchMedia('(max-width:760px)').matches,cols:getComputedStyle(document.querySelector('.score-review>.grid')).gridTemplateColumns})")
+    assert review.evaluate('el=>el.scrollWidth<=el.clientWidth+1')
+    page.get_by_role('button', name='编辑', exact=True).first.click()
+    assert dialog.bounding_box()['width'] <= 700
+    dialog.get_by_role('button', name='保存修改').click(trial=True)
+    dialog.get_by_role('button', name='关闭', exact=True).click()
     print(json.dumps(measurements))
     assert not errors, errors
     browser.close()
