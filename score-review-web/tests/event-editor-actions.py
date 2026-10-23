@@ -218,6 +218,37 @@ class EditorActions(unittest.TestCase):
         self.page.reload(wait_until='networkidle')
         self.assertLess(max(alignment_offsets(editor)), 2)
 
+    def test_alignment_replaces_nested_inline_alignment_in_selected_paragraph(self):
+        self.event['detailPageHtml'] = '''
+            <div class="mini-preview-copy content-align-left"><span style="text-align:center;color:#b46900">需要右对齐的正文</span></div>
+            <div class="mini-preview-copy content-align-left">未选中的正文</div>'''
+        self.page.reload(wait_until='networkidle')
+        editor = self.page.locator('[data-editor]')
+        editor.evaluate('''root=>{
+            const text=root.querySelector('span').firstChild,range=document.createRange();
+            range.selectNodeContents(text);
+            const selection=window.getSelection();selection.removeAllRanges();selection.addRange(range);
+            root.dispatchEvent(new MouseEvent('mouseup',{bubbles:true}));
+        }''')
+        self.button('右对齐').click()
+
+        selected = editor.locator('.mini-preview-copy').first
+        self.assertEqual(selected.evaluate('el=>getComputedStyle(el).textAlign'), 'right')
+        self.assertEqual(selected.evaluate('el=>el.classList.contains("content-align-right")'), True)
+        self.assertEqual(selected.locator('span').evaluate('el=>el.style.textAlign'), '')
+        self.assertEqual(editor.locator('.mini-preview-copy').nth(1).evaluate(
+            'el=>getComputedStyle(el).textAlign'), 'left')
+
+        self.button('手机预览').click()
+        preview = self.page.get_by_role('dialog', name='赛事手机预览').locator('.race-phone-content')
+        self.assertEqual(preview.locator('.mini-preview-copy').first.evaluate(
+            'el=>getComputedStyle(el).textAlign'), 'right')
+        self.page.keyboard.press('Escape')
+        self.save()
+        self.page.reload(wait_until='networkidle')
+        self.assertEqual(editor.locator('.mini-preview-copy').first.evaluate(
+            'el=>getComputedStyle(el).textAlign'), 'right')
+
     def test_reset_restores_cover_and_editor_mode(self):
         self.page.locator('input[type=file][accept="image/*"]').set_input_files(
             dict(name='new-cover.png', mimeType='image/png', buffer=PNG))

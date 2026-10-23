@@ -68,6 +68,10 @@
   .race-phone-content img { display:block; width:100%; height:auto; max-width:100%; object-fit:contain; border-radius:2px; margin:0 0 18px; }
   .race-phone-content { color:#3e3e3e; font-size:14px; line-height:1.88; letter-spacing:.15px; overflow-wrap:anywhere; word-break:break-word; }
   .race-phone-content p,.race-phone-content h1,.race-phone-content h2,.race-phone-content h3,.race-phone-content h4,.race-phone-content blockquote { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .editor-content .content-align-left,.race-phone-content .content-align-left { text-align:left; }
+  .editor-content .content-align-center,.race-phone-content .content-align-center { text-align:center; }
+  .editor-content .content-align-right,.race-phone-content .content-align-right { text-align:right; }
+  .editor-content .content-align-justify,.race-phone-content .content-align-justify { text-align:justify; }
   .race-phone-content p { margin:0 0 13px; }
   .race-phone-content h1,.race-phone-content h2,.race-phone-content h3,.race-phone-content h4 { margin:18px 0 10px; color:#222; line-height:1.45; }
   .race-phone-content ul,.race-phone-content ol { margin:0 0 14px; padding-left:22px; list-style-position:outside; }
@@ -1171,7 +1175,30 @@ function Editor({ev,onChange}) {
  const update=()=>{ref.current.querySelectorAll('.mini-preview-copy').forEach(node=>{if(/^\d+(?:\.\d+)?px$/.test(node.style.width.trim()))node.style.removeProperty('width')});setCount((ref.current.innerText||'').length);if(onChange)onChange(ref.current.innerHTML)};
  const remember=()=>{const s=window.getSelection();if(s.rangeCount&&ref.current.contains(s.anchorNode)){selection.current=s.getRangeAt(0).cloneRange();let el=s.anchorNode.nodeType===1?s.anchorNode:s.anchorNode.parentElement;const parts=[];while(el&&el!==ref.current){parts.unshift(el.tagName.toLowerCase());el=el.parentElement}setPath('body'+(parts.length?' > '+parts.join(' > '):''));}};
  const restore=()=>{ref.current.focus();const s=window.getSelection();if(selection.current&&ref.current.contains(selection.current.startContainer)){s.removeAllRanges();s.addRange(selection.current)}};
- const run=(cmd,value=null)=>{if(source){setMessage('请先退出 HTML 源码模式');return;}restore();document.execCommand(cmd,false,value);remember();update()};
+ const alignments={justifyLeft:'left',justifyCenter:'center',justifyRight:'right',justifyFull:'justify'};
+ const applyAlignment=align=>{
+  const selection=window.getSelection();
+  if(!selection?.rangeCount)return;
+  const range=selection.getRangeAt(0),anchor=selection.anchorNode;
+  const selector='p,h1,h2,h3,h4,h5,h6,blockquote,li,div';
+  const blocks=range.collapsed
+   ? [anchor?.nodeType===Node.ELEMENT_NODE?anchor:anchor?.parentElement].map(node=>node?.closest(selector)).filter(node=>node&&node!==ref.current)
+   : [...ref.current.querySelectorAll(selector)].filter(node=>{
+    if(node.closest('table')||node.matches('.mini-preview-table-wrap,.mini-preview-prize-block')||node.querySelector('table'))return false;
+    if(node.tagName==='DIV'&&node.querySelector('p,h1,h2,h3,h4,h5,h6,blockquote,li,div'))return false;
+    try{return range.intersectsNode(node)}catch{return false}
+   });
+  blocks.forEach(block=>{
+   block.querySelectorAll('[style],.content-align-left,.content-align-center,.content-align-right,.content-align-justify').forEach(node=>{
+    node.style.removeProperty('text-align');
+    node.classList.remove('content-align-left','content-align-center','content-align-right','content-align-justify');
+   });
+   block.style.textAlign=align;
+   block.classList.remove('content-align-left','content-align-center','content-align-right','content-align-justify');
+   block.classList.add(`content-align-${align}`);
+  });
+ };
+ const run=(cmd,value=null)=>{if(source){setMessage('请先退出 HTML 源码模式');return;}restore();if(alignments[cmd])applyAlignment(alignments[cmd]);else document.execCommand(cmd,false,value);remember();update()};
  const toggle=()=>{if(source){ref.current.innerHTML=sanitizeEditorSource(ref.current.textContent);}else ref.current.textContent=ref.current.innerHTML;selection.current=null;setSource(!source);update()};
  useEffect(()=>{const h=e=>{if(e.key==='Escape')setFull(false)};document.addEventListener('keydown',h);return()=>document.removeEventListener('keydown',h)},[]);
  const tools=[['撤销','undo','undo'],['重做','redo','redo'],['加粗','bold','bold'],['斜体','italic','italic'],['下划线','underline','underline'],['删除线','strikethrough','strikeThrough'],['清除格式','eraser','removeFormat'],['下标','subscript','subscript'],['引用','quote-left','formatBlock','blockquote'],['有序列表','list-ol','insertOrderedList'],['无序列表','list-ul','insertUnorderedList'],['增加缩进','indent','indent'],['减少缩进','outdent','outdent'],['左对齐','align-left','justifyLeft'],['居中','align-center','justifyCenter'],['右对齐','align-right','justifyRight'],['两端对齐','align-justify','justifyFull']];
