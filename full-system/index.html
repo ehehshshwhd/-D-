@@ -901,7 +901,7 @@ function EventCard({ ev, onEnter }) {
           )}
         </div>
         <div className="text-[15px] leading-[22px] text-[#303133] clamp2 font-medium mb-3 h-[44px]">
-          <span style={{ color: TYPE_COLOR[ev.type] }}>[{ev.type}]</span>{ev.title}
+          {ev.type && <span style={{ color: TYPE_COLOR[ev.type] }}>{ev.type} </span>}{ev.title}
         </div>
         <div className="mt-auto pt-2 flex flex-col gap-2 border-t border-gray-50">
           <div className="flex items-center justify-between">
