@@ -2518,7 +2518,7 @@ function DetailPage({ ev, onHome }) {
     const syncNotice = event => {
       if (String(event.detail?.eventId || '') !== eventId) return;
       if (event.detail.status === 'error') setCloudDataStatus({ loading: false, message: `云端同步失败：${event.detail.message}` });
-      else if (event.detail.status === 'saved') setCloudDataStatus({ loading: false, message: event.detail.storage === 'cloudbase' ? '赛事数据已同步到云端' : '赛事服务已保存数据（当前未启用 CloudBase 云存储）' });
+      else if (event.detail.status === 'saved') setCloudDataStatus({ loading: false, message: event.detail.storage === 'cloudbase' ? '' : '赛事服务已保存数据（当前未启用 CloudBase 云存储）' });
     };
     window.addEventListener('event-data-sync', syncNotice);
     (async () => {
@@ -2550,7 +2550,7 @@ function DetailPage({ ev, onHome }) {
           eventDataRevisions.set(`${eventId}::${key}`, saved.revision);
           eventDataPendingValues.delete(`${eventId}::${key}`);
         }
-        if (!cancelled) setCloudDataStatus({ loading: false, message: result.storage === 'cloudbase' ? '赛事数据已连接云端' : '赛事服务已连接，但当前未启用 CloudBase 云存储' });
+        if (!cancelled) setCloudDataStatus({ loading: false, message: result.storage === 'cloudbase' ? '' : '赛事服务已连接，但当前未启用 CloudBase 云存储' });
       } catch (error) {
         if (!cancelled) setCloudDataStatus({ loading: false, message: `赛事云端暂不可用，当前数据保存在本机：${error.message || error}` });
       }

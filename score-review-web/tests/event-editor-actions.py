@@ -441,5 +441,33 @@ class EditorActions(unittest.TestCase):
         self.assertIs(saved[0]['registrationEnabled'], False)
 
 
+    def test_cloud_connection_failure_shows_notice_and_reconnect_clears_it(self):
+        self.page.route('**/api/event-data?*', lambda route: route.fulfill(
+            status=503, json=dict(ok=False, message='测试连接失败')))
+        self.page.reload(wait_until='networkidle')
+        notice = self.page.locator('main > [role="status"]')
+        self.assertIn('赛事云端暂不可用', notice.inner_text())
+        self.assertIn('测试连接失败', notice.inner_text())
+        self.page.unroute('**/api/event-data?*')
+        self.page.reload(wait_until='networkidle')
+        self.page.get_by_placeholder('请输入赛事标题').wait_for()
+        self.assertEqual(notice.count(), 0)
+
+    def test_cloud_notice_only_shows_failures_and_clears_after_retry(self):
+        notice = self.page.locator('main > [role="status"]')
+        self.assertEqual(notice.count(), 0)
+        self.page.evaluate("""() => {
+            const eventId = 'actions-test', key = 'signup-actions-test';
+            eventDataPendingValues.set(`${eventId}::${key}`, { eventId, key, value: [] });
+            setEventDataSyncState({ eventId, status: 'error', message: '测试同步失败' });
+        }""")
+        notice.wait_for(state='visible')
+        self.assertIn('云端同步失败：测试同步失败', notice.inner_text())
+        notice.get_by_role('button', name='重试同步本机未上传数据（1）', exact=True).click()
+        notice.wait_for(state='detached')
+        self.assertEqual(self.page.evaluate('eventDataPendingValues.size'), 0)
+        self.assertEqual(self.event_data['signup-actions-test']['value'], [])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
