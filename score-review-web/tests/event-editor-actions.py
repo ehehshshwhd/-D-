@@ -453,6 +453,17 @@ class EditorActions(unittest.TestCase):
         self.page.get_by_placeholder('请输入赛事标题').wait_for()
         self.assertEqual(notice.count(), 0)
 
+    def test_successful_responses_without_cloudbase_do_not_show_notice(self):
+        self.page.route('**/api/event-data?*', lambda route: route.fulfill(
+            json=dict(ok=True, items={}, storage='local')))
+        self.page.reload(wait_until='networkidle')
+        notice = self.page.locator('main > [role="status"]')
+        self.assertEqual(notice.count(), 0)
+        self.page.evaluate("setEventDataSyncState({ eventId: 'actions-test', status: 'error', message: '测试同步失败' })")
+        notice.wait_for(state='visible')
+        self.page.evaluate("setEventDataSyncState({ eventId: 'actions-test', status: 'saved', storage: 'local' })")
+        notice.wait_for(state='detached')
+
     def test_cloud_notice_only_shows_failures_and_clears_after_retry(self):
         notice = self.page.locator('main > [role="status"]')
         self.assertEqual(notice.count(), 0)
