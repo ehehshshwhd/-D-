@@ -495,6 +495,15 @@ const INITIAL_EVENTS = [
 
 let EVENTS; try { EVENTS = JSON.parse(localStorage.getItem('race-events')) || INITIAL_EVENTS; } catch { EVENTS = INITIAL_EVENTS; }
 function store(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } }
+// Groups live on the cloud event (signupOptions/groups) and are only mirrored
+// to groups-<id> after saving in 组别管理, so read both like EventGroupManager.
+function eventGroupList(eventId) {
+  const id = String(eventId), local = store('groups-' + id, []), ev = (Array.isArray(EVENTS) ? EVENTS : []).find(item => String(item.id) === id) || {};
+  const names = [...(Array.isArray(ev.signupOptions) ? ev.signupOptions.map(option => option?.name || option?.groupName) : []), ...(Array.isArray(ev.groups) ? ev.groups.map(group => typeof group === 'string' ? group : group?.name) : [])].map(name => String(name || '').trim()).filter(Boolean);
+  if (!names.length) return Array.isArray(local) ? local : [];
+  const byName = new Map((Array.isArray(local) ? local : []).map(row => [String(row?.名称 || '').trim(), row]));
+  return [...new Set(names)].map(name => byName.get(name) || { 名称: name });
+}
 let ACTIVE_EVENT_DATA_ID = '';
 const eventDataRevisions = new Map();
 const eventDataWriteQueues = new Map();
@@ -979,6 +988,7 @@ const MENU = [
   { key: "group", label: "组别管理", icon: "fas fa-th" },
   { key: "round", label: "回合管理", icon: "fas fa-user" },
   { key: "signup", label: "报名管理", icon: "fas fa-user" },
+  { key: "signup-perm", label: "账号与权限", icon: "fas fa-user-shield" },
   { key: "review", label: "成绩审核", icon: "fas fa-clipboard-check" },
   { key: "match", label: "比赛管理", icon: "fas fa-flag" },
   { key: "comment", label: "赛事评论", icon: "fas fa-comment-dots" },
@@ -1646,7 +1656,7 @@ function RaceOperations({ev,section}) {
  return <div className="p-6 overflow-auto flex-1">{bar}<h2 className="text-xl font-bold mb-5">赛后归档与操作追踪</h2><button className="bg-blue-500 text-white px-5 py-3 rounded mb-6" onClick={exportAll}>下载完整赛事归档</button>{store(key+'audit',[]).map((r,i)=><div key={i} className="border-b py-4 flex gap-6"><span className="text-gray-400">{r.time}</span><span>{r.user}</span><span>{r.action}</span></div>)}</div>;
 }
 function SignupManager({ev}) {
-  const savedGroups = store('groups-' + ev.id, []);
+  const savedGroups = eventGroupList(ev.id);
   const groups = savedGroups.length ? savedGroups : (ev.signupOptions || []).map(option => ({名称: option.name, 报名费: option.fee}));
   const [group, setGroup] = useState(groups[0]?.名称 || '');
   const [rows, setRows] = useState(() => store('signup-' + ev.id, []));
@@ -1946,7 +1956,7 @@ function SignupManager({ev}) {
 
 function MatchManager({ev}) {
   const isRally = ev.type === '拉力赛';
-  const groups = store('groups-' + ev.id, []);
+  const groups = eventGroupList(ev.id);
   const [group, setGroup] = useState(groups[0]?.名称 || '');
   const rounds = store('race-rounds-' + ev.id, {})[group] || [];
   const [round, setRound] = useState(rounds[0]?.name || '');
@@ -2230,7 +2240,7 @@ function CommentManager({ev}) {
 
 function RoundManager({ev}) {
  const isRally = ev.type === '拉力赛';
- const groups=store('groups-'+ev.id,[]);
+ const groups=eventGroupList(ev.id);
  const [group,setGroup]=useState(groups[0]?.名称||'');
  const [all,setAll]=useState(()=>store('race-rounds-'+ev.id,{}));
  const [draft,setDraft]=useState(null),[editing,setEditing]=useState(-1),[reward,setReward]=useState(null),[rewardText,setRewardText]=useState('');
@@ -2475,7 +2485,7 @@ function ScoreReview({ev, onHome}) {
  const refreshCloud=()=>{const state=cloudRef.current;state.saveQueue=state.saveQueue.catch(()=>{}).then(loadCloudData)};
  useEffect(()=>{if(cloud.status!=='error')return;const timer=setTimeout(()=>{const state=cloudRef.current;if(state.eventId===eventId&&!state.loading)refreshCloud()},5000);return()=>clearTimeout(timer)},[cloud.status,eventId]);
  const save=next=>{const state=cloudRef.current;if(state.loading){setMessage('正在读取云端成绩，请稍候再操作');return false}const previous=rowsRef.current;try{saveStore(key,next);replaceRows(next)}catch{setMessage('保存失败，请检查存储空间');return false}if(state.eventId!==eventId||!state.connected){setMessage('已保存在本机；云端未连接，连接后可重试同步');return true}const touched=[...new Set([...previous,...next].map(row=>normalizedStage(row.stage)).filter(value=>value>=1&&value<=20).map(value=>'SS'+value))].filter(targetStage=>JSON.stringify(previous.filter(row=>row.stage===targetStage).map(window.ScoreReviewCloud.toCloudRow))!==JSON.stringify(next.filter(row=>row.stage===targetStage).map(window.ScoreReviewCloud.toCloudRow)));if(!touched.length)return true;setCloud({status:'saving',error:''});const task=state.saveQueue.catch(()=>{}).then(async()=>{if(!state.connected||state.eventId!==eventId)throw new Error('云端连接已中断，请刷新后重试');for(const targetStage of touched){const revision=await window.ScoreReviewCloud.saveStage({fetcher:(url,options)=>fetch(url,options),apiUrl:API_URL,eventId,stage:targetStage,rows:next.filter(row=>row.stage===targetStage),expectedRevision:state.revisions[targetStage]});state.revisions[targetStage]=revision}if(state.eventId===eventId){setCloud({status:'connected',error:''});setMessage('成绩已保存并同步到赛事云端')}});state.saveQueue=task;task.catch(error=>{if(state.eventId===eventId){state.connected=false;setCloud({status:'error',error:error.message||String(error)});setMessage('本机已保存，但云端同步失败：'+(error.message||error))}});return true};
- const config=store(configKey,{}),groups=store('groups-'+eventId,[]),stages=['总成绩',...Array.from({length:20},(_,i)=>'SS'+(i+1))];
+ const config=store(configKey,{}),groups=eventGroupList(eventId),stages=['总成绩',...Array.from({length:20},(_,i)=>'SS'+(i+1))];
   const normalizedStage=value=>{const match=String(value||'').trim().toUpperCase().match(/^(?:SS|第)?(\d+)/);return match?Number(match[1]):0};
   const durationMs=value=>{if(value==null||value==='')return null;const seconds=Number(value);return Number.isFinite(seconds)&&seconds>=0?Math.round(seconds*1000):null};
   const formatDuration=ms=>{if(ms===null||!Number.isFinite(ms))return '';const h=Math.floor(ms/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000),fraction=ms%1000;return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(fraction).padStart(3,'0')}`};
@@ -2573,6 +2583,7 @@ function DetailPage({ ev, onHome }) {
           {tab === "group" && <EventGroupManager key={ev.id} ev={ev} />}
           {tab === 'match' && <MatchManager ev={ev} />}
           {tab === 'signup' && <SignupManager ev={ev} />}
+          {tab === 'signup-perm' && <AccountPermissions />}
           {tab === 'review' && <ScoreReview ev={ev} onHome={onHome} />}
           {tab === 'round' && <RoundManager ev={ev} />}
           {tab === 'timing' && <TimingPanel ev={ev} />}
@@ -2580,7 +2591,7 @@ function DetailPage({ ev, onHome }) {
           {tab === 'comment' && <CommentManager ev={ev} />}
           {tab === 'notice' && <ContentManager ev={ev} label={current} storageKey={tab} fields={['公告标题','公告内容','发布时间','状态']} />}
           {tab === 'news' && <DynamicManager ev={ev} />}
-          {!RACE_OPS.some(r=>r[0]===tab) && !['info','group','match','signup','review','round','timing','comment','notice','news'].includes(tab) && <RecordManager key={tab+ev.id} label={current} fields={TAB_FIELDS[tab]} storageKey={tab+'-'+ev.id} />}
+          {!RACE_OPS.some(r=>r[0]===tab) && !['info','group','match','signup','signup-perm','review','round','timing','comment','notice','news'].includes(tab) && <RecordManager key={tab+ev.id} label={current} fields={TAB_FIELDS[tab]} storageKey={tab+'-'+ev.id} />}
           </>}
         </div>
       </main>
@@ -2589,6 +2600,210 @@ function DetailPage({ ev, onHome }) {
 }
 
 
+
+/* ---------------- Account & permission ---------------- */
+const PERM_PERMISSION_STAGES = Array.from({ length: 20 }, (_, index) => `SS${index + 1}`);
+const PERM_ENTRY_FIELDS = [['startTime', '发车时间'], ['endTime', '收车时间'], ['penalty', '罚时']];
+const PERM_EMPTY_FORM = { id: '', phoneNumber: '', countryCode: '86', label: '', role: 'staff', stages: PERM_PERMISSION_STAGES.slice(), entry: { startTime: true, endTime: true, penalty: true }, locked: false };
+
+function permSort(rows) { return [...rows].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()) }
+
+function AccountPermissions() {
+  const [permissions, setPermissions] = useState({ admins: [], staff: [] });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [form, setForm] = useState(PERM_EMPTY_FORM);
+  const [formError, setFormError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+
+  const load = async () => {
+    if (!API_URL) { setPermissions({ admins: [], staff: [] }); setLoading(false); setLoadError('未连接云端后台服务'); return }
+    setLoading(true); setLoadError('');
+    try {
+      const response = await fetch(`${API_URL}/api/permissions`, { credentials: 'include', headers: { Accept: 'application/json' } });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) throw new Error(result?.message || `读取云端权限失败（${response.status}）`);
+      setPermissions({ admins: Array.isArray(result.admins) ? result.admins : [], staff: Array.isArray(result.staff) ? result.staff : [] });
+    } catch (error) {
+      setPermissions({ admins: [], staff: [] });
+      setLoadError(error.message || '读取云端权限失败');
+    } finally { setLoading(false) }
+  };
+  useEffect(() => { load() }, []);
+
+  const rows = [...permissions.admins.map(item => ({ ...item, role: 'admin' })), ...permissions.staff.map(item => ({ ...item, role: 'staff' }))];
+  const visible = permSort(rows).filter(item => (roleFilter === 'all' || item.role === roleFilter) && (!query || `${item.phoneNumber} ${item.label || ''}`.toLowerCase().includes(query.trim().toLowerCase())));
+
+  const resetForm = () => { setForm({ ...PERM_EMPTY_FORM, stages: PERM_PERMISSION_STAGES.slice() }); setFormError('') };
+  const editRow = item => {
+    if (!item || item.isSuperAdmin) return;
+    setForm({
+      id: item.id || '', phoneNumber: item.phoneNumber || '', countryCode: item.countryCode || '86', label: item.label || '',
+      role: item.role === 'admin' ? 'admin' : 'staff',
+      stages: item.role === 'admin' ? PERM_PERMISSION_STAGES.slice() : (Array.isArray(item.stagePermissions) ? item.stagePermissions : []),
+      entry: { startTime: item.entryPermissions?.startTime !== false, endTime: item.entryPermissions?.endTime !== false, penalty: item.entryPermissions?.penalty !== false },
+      locked: item.role === 'admin'
+    });
+    setFormError('');
+  };
+
+  const changeRole = role => {
+    setForm(prev => ({ ...prev, role, locked: false, stages: role === 'admin' ? PERM_PERMISSION_STAGES.slice() : prev.stages, entry: role === 'admin' ? { startTime: true, endTime: true, penalty: true } : prev.entry }));
+    setFormError('');
+  };
+  const toggleStage = stage => setForm(prev => ({ ...prev, stages: prev.stages.includes(stage) ? prev.stages.filter(item => item !== stage) : [...prev.stages, stage] }));
+  const toggleEntry = key => setForm(prev => ({ ...prev, entry: { ...prev.entry, [key]: !prev.entry[key] } }));
+
+  const save = async event => {
+    event.preventDefault();
+    const phoneNumber = String(form.phoneNumber || '').replace(/\D/g, '').slice(0, 15);
+    if (phoneNumber.length < 5) { setFormError('请输入至少 5 位有效手机号。'); return }
+    if (form.role === 'staff' && !form.stages.length) { setFormError('工作人员至少需要选择一个赛段。'); return }
+    const payload = {
+      phoneNumber,
+      countryCode: String(form.countryCode || '').replace(/\D/g, '').slice(0, 6) || '86',
+      label: String(form.label || '').trim(),
+      role: form.role,
+      stagePermissions: form.role === 'admin' ? PERM_PERMISSION_STAGES.slice() : form.stages,
+      entryPermissions: form.role === 'admin' ? { startTime: true, endTime: true, penalty: true } : { ...form.entry }
+    };
+    setSaving(true); setFormError('');
+    try {
+      const response = await fetch(`${API_URL}/api/permissions`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) throw new Error(result?.message || '权限保存失败');
+      setPermissions({ admins: Array.isArray(result.admins) ? result.admins : [], staff: Array.isArray(result.staff) ? result.staff : [] });
+      resetForm();
+    } catch (error) { setFormError(error.message || '权限保存失败') } finally { setSaving(false) }
+  };
+
+  const toggleEnabled = async item => {
+    if (!item || item.isSuperAdmin) return;
+    try {
+      const response = await fetch(`${API_URL}/api/permissions`, { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: item.id, role: item.role, enabled: item.enabled === false }) });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) throw new Error(result?.message || '权限状态更新失败');
+      setPermissions({ admins: Array.isArray(result.admins) ? result.admins : [], staff: Array.isArray(result.staff) ? result.staff : [] });
+    } catch (error) { alert(`更新权限状态失败：${error.message}`) }
+  };
+
+  const remove = async item => {
+    if (!item || item.isSuperAdmin || !confirm(`确定删除账号 ${item.phoneNumber} 的权限吗？`)) return;
+    try {
+      const response = await fetch(`${API_URL}/api/permissions`, { method: 'DELETE', credentials: 'include', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ id: item.id, role: item.role }) });
+      const result = await response.json();
+      if (!response.ok || !result?.ok) throw new Error(result?.message || '删除账号失败');
+      setPermissions({ admins: Array.isArray(result.admins) ? result.admins : [], staff: Array.isArray(result.staff) ? result.staff : [] });
+      if (form.id === item.id) resetForm();
+    } catch (error) { alert(`删除账号失败：${error.message}`) }
+  };
+
+  const stageDisabled = form.role === 'admin';
+  const entryDisabled = form.role === 'admin';
+  const metaText = loadError ? '云端权限读取失败' : loading ? '正在读取云端权限…' : `${visible.length} 个账号 · 与小程序权限实时共用`;
+
+  return (
+    <div className="flex-1 min-h-0 overflow-auto pt-4 pr-6 pl-1">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+        <div>
+          <h2 className="text-[22px] font-bold text-[#303133]">账号与权限</h2>
+          <p className="text-gray-500 text-sm mt-2">管理赛事系统账号、赛段录入范围和工作人员权限；修改后与小程序实时共用。</p>
+        </div>
+        <button onClick={load} className="border border-[#dcdfe6] text-[#606266] bg-white rounded px-5 h-[38px]">刷新权限</button>
+      </div>
+      <div className="bg-white border border-[#e6e6e6] rounded-lg p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <span className="text-gray-400 text-sm" role="status">{metaText}</span>
+          <span className="text-gray-400 text-sm">有权限的账号才能进入工作后台</span>
+        </div>
+        <div className="flex flex-wrap gap-3 mb-5">
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="按手机号或备注搜索" className="border border-[#dcdfe6] rounded px-3 h-[40px] flex-1 min-w-[220px]" />
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} aria-label="筛选账号" className="border border-[#dcdfe6] rounded px-3 h-[40px] w-[160px]">
+            {[['all', '全部账号'], ['staff', '工作人员'], ['admin', '管理员']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </div>
+        {loadError && <p role="alert" className="text-red-500 mb-4">{loadError}，请确认网页后台已连接 CloudBase 后重试。</p>}
+        <div className="flex flex-col xl:flex-row gap-5">
+          <form onSubmit={save} className="w-full xl:w-[320px] shrink-0 bg-[#f5f7fa] border border-[#e6e6e6] rounded-lg p-5 flex flex-col gap-3">
+            <label className="text-sm text-gray-500">手机号
+              <input value={form.phoneNumber} onChange={e => setForm(prev => ({ ...prev, phoneNumber: e.target.value }))} readOnly={form.locked} inputMode="numeric" maxLength={15} autoComplete="off" placeholder="输入手机号" required className="block w-full mt-1 h-[38px] border border-[#dcdfe6] rounded px-3 bg-white read-only:bg-[#f5f5f5] read-only:text-gray-500" />
+            </label>
+            <label className="text-sm text-gray-500">国家/地区代码
+              <input value={form.countryCode} onChange={e => setForm(prev => ({ ...prev, countryCode: e.target.value }))} readOnly={form.locked} inputMode="numeric" maxLength={6} className="block w-full mt-1 h-[38px] border border-[#dcdfe6] rounded px-3 bg-white read-only:bg-[#f5f5f5] read-only:text-gray-500" />
+            </label>
+            <label className="text-sm text-gray-500">备注名称
+              <input value={form.label} onChange={e => setForm(prev => ({ ...prev, label: e.target.value }))} maxLength={30} placeholder="例如：SS1 计时员" className="block w-full mt-1 h-[38px] border border-[#dcdfe6] rounded px-3 bg-white" />
+            </label>
+            <label className="text-sm text-gray-500">账号角色
+              <select value={form.role} onChange={e => changeRole(e.target.value)} disabled={form.locked} className="block w-full mt-1 h-[38px] border border-[#dcdfe6] rounded px-3 bg-white disabled:bg-[#f5f5f5] disabled:text-gray-400">
+                <option value="staff">工作人员</option>
+                <option value="admin">管理员（全赛段权限）</option>
+              </select>
+            </label>
+            <div>
+              <span className="block text-sm text-gray-500 mb-2">允许录入的赛段</span>
+              <div className="grid grid-cols-3 gap-2">
+                {PERM_PERMISSION_STAGES.map(stage => (
+                  <label key={stage} className={`flex items-center gap-1.5 rounded border px-1.5 py-1.5 text-[12px] ${stageDisabled ? 'bg-[#f0f0f0] text-gray-400 border-[#e6e6e6]' : 'bg-white text-[#303133] border-[#e6e6e6]'}`}>
+                    <input type="checkbox" checked={form.stages.includes(stage)} onChange={() => toggleStage(stage)} disabled={stageDisabled} className={`w-3.5 h-3.5 accent-[#409eff] ${stageDisabled ? 'opacity-40' : ''}`} />{stage}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="block text-sm text-gray-500 mb-2">允许填写的数据</span>
+              <div className="grid grid-cols-3 gap-2">
+                {PERM_ENTRY_FIELDS.map(([key, label]) => (
+                  <label key={key} className={`flex items-center gap-1.5 rounded border px-1.5 py-1.5 text-[12px] ${entryDisabled ? 'bg-[#f0f0f0] text-gray-400 border-[#e6e6e6]' : 'bg-white text-[#303133] border-[#e6e6e6]'}`}>
+                    <input type="checkbox" checked={Boolean(form.entry[key])} onChange={() => toggleEntry(key)} disabled={entryDisabled} className={`w-3.5 h-3.5 accent-[#409eff] ${entryDisabled ? 'opacity-40' : ''}`} />{label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {formError && <p role="alert" className="text-red-500 text-sm">{formError}</p>}
+            <div className="flex justify-end gap-2 mt-1">
+              <button type="button" onClick={resetForm} className="border border-[#dcdfe6] text-[#606266] bg-white rounded px-4 h-[36px]">清空</button>
+              <button type="submit" disabled={saving} className="bg-[#409eff] hover:bg-[#66b1ff] disabled:opacity-50 text-white rounded px-4 h-[36px]">{saving ? '正在保存…' : '保存权限'}</button>
+            </div>
+          </form>
+          <div className="flex-1 min-w-0 border border-[#e6e6e6] rounded-lg bg-white overflow-auto max-h-[570px] xl:max-h-[calc(100vh-330px)]" aria-live="polite">
+            {!visible.length ? <p className="py-16 text-center text-gray-400 text-sm">{loading ? '正在读取云端权限…' : '没有找到账号。可在左侧添加账号并分配赛段。'}</p> : visible.map(item => {
+              const chips = item.role === 'admin'
+                ? [<span key="all" className="rounded-full bg-[#eef6ff] text-[#0066c0] text-[11px] px-2 py-1">管理员 · 全部权限</span>]
+                : (item.stagePermissions || []).map(stage => <span key={stage} className="rounded-full bg-[#eef6ff] text-[#0066c0] text-[11px] px-2 py-1">{stage}</span>);
+              const entries = item.role === 'admin'
+                ? PERM_ENTRY_FIELDS.map(([, label]) => label)
+                : PERM_ENTRY_FIELDS.filter(([key]) => item.entryPermissions?.[key] !== false).map(([, label]) => label);
+              return (
+                <article key={`${item.role}-${item.id}`} className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 px-4 py-4 border-b border-[#eee] last:border-b-0">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-[15px] text-[#303133] break-all">{item.phoneNumber || ''}</div>
+                    <div className="text-gray-500 text-[12px] mt-1">{(item.label || (item.role === 'admin' ? '管理员' : '工作人员'))} · {item.countryCode || '86'}</div>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {chips}
+                      {entries.map(label => <span key={label} className="rounded-full bg-[#fff3e7] text-[#a65800] text-[11px] px-2 py-1">{label}可录入</span>)}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <span className={`rounded-full text-[11px] px-2 py-1 ${item.enabled === false ? 'bg-[#f1f1f1] text-[#888]' : 'bg-[#e7f8ef] text-[#16824b]'}`}>{item.enabled === false ? '已停用' : '已启用'}</span>
+                    {item.isSuperAdmin ? <span className="text-gray-400 text-[12px]">最高管理员</span> : <>
+                      <button type="button" onClick={() => editRow(item)} className="text-[#409eff] text-[13px] px-1">编辑</button>
+                      <button type="button" onClick={() => toggleEnabled(item)} className="text-[#409eff] text-[13px] px-1">{item.enabled === false ? '启用' : '停用'}</button>
+                      <button type="button" onClick={() => remove(item)} className="text-[#f56c6c] text-[13px] px-1">删除</button>
+                    </>}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+        <p className="text-gray-400 text-[12px] leading-6 mt-4">管理员拥有全部赛段和录入权限。最高管理员固定账号不能停用或删除；网页后台密码用于授权网页上的账号管理。</p>
+      </div>
+    </div>
+  );
+}
 
 /* ---------------- App ---------------- */
 const MODULE_FIELDS = {
