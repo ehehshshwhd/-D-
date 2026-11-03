@@ -15,6 +15,9 @@ const FULL_SYSTEM_ROOT = fs.existsSync(path.resolve(WEB_ROOT, 'full-system'))
   ? path.resolve(WEB_ROOT, 'full-system')
   : path.resolve(WEB_ROOT, '..', 'full-system')
 const DATA_FILE = process.env.SCORE_REVIEW_DATA || path.join(WEB_ROOT, 'server-data.json')
+// Short-lived cache for the score review page's one-second revision probe, so
+// several open tabs cost one database read instead of one read per tab.
+const revisionCache = new Map()
 const WEB_PASSWORD = process.env.SCORE_REVIEW_PASSWORD
 const SESSION_SECRET = process.env.SCORE_REVIEW_SESSION_SECRET || (process.env.NODE_ENV === 'production' ? '' : crypto.randomBytes(32).toString('hex'))
 // Keep the admin session persistent. The signature still prevents tampering;
@@ -418,18 +421,33 @@ const server = http.createServer(async (req, res) => {
       if (!isValidEventId(rawEventId)) return send(res, 400, { ok: false, message: '赛事 ID 无效' })
       const eventId = validateEventId(rawEventId)
       try {
-        if (cloudStore.enabled) return send(res, 200, { ok: true, ...(await cloudStore.listStageRevisions(eventId)) })
-        const data = readData(), stages = {}
-        for (const stage of Array.from({ length: 20 }, (_, index) => `SS${index + 1}`)) {
-          const record = data[key(eventId, stage)]
-          if (!record) continue
-          stages[stage] = {
-            revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0,
-            count: Array.isArray(record.rows) ? record.rows.length : 0,
-            updatedAt: record.updatedAt || null
+        // The review page polls this once per second and several tabs may be
+        // open at once, so share one database read across all of them.
+        const cached = revisionCache.get(eventId)
+        if (cached && Date.now() - cached.at < 700) return send(res, 200, { ok: true, ...cached.value })
+        let value
+        if (cloudStore.enabled) value = await cloudStore.listStageRevisions(eventId)
+        else {
+          const data = readData(), stages = {}
+          for (const stage of Array.from({ length: 20 }, (_, index) => `SS${index + 1}`)) {
+            const record = data[key(eventId, stage)]
+            if (!record) continue
+            stages[stage] = {
+              revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0,
+              count: Array.isArray(record.rows) ? record.rows.length : 0,
+              updatedAt: record.updatedAt || null
+            }
           }
+          value = { eventId, stages }
         }
-        return send(res, 200, { ok: true, eventId, stages })
+        revisionCache.set(eventId, { at: Date.now(), value })
+        // Keep the cache from growing with every event ever opened.
+        if (revisionCache.size > 200) {
+          const cutoff = Date.now() - 60000
+          for (const [id, entry] of revisionCache) if (entry.at < cutoff) revisionCache.delete(id)
+          if (revisionCache.size > 200) revisionCache.clear()
+        }
+        return send(res, 200, { ok: true, ...value })
       } catch (error) { return cloudError(res, error) }
     }
     if (url.pathname === '/api/work-records' && req.method === 'GET') {
@@ -458,6 +476,7 @@ const server = http.createServer(async (req, res) => {
           if (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision !== actual) return send(res, 409, { ok: false, code: 'REVISION_CONFLICT', message: `成绩已被其他设备修改（云端版本 ${actual}，本地版本 ${input.expectedRevision}），请刷新后重试` })
           record.revision = actual + 1; data[key(eventId, stage)] = record; writeData(data); saved.revision = record.revision
         }
+        revisionCache.delete(eventId)
         return send(res, 200, { ok: true, count: rows.length, revision: saved.revision, verified: saved.verified === true })
       } catch (error) { if (cloudStore.enabled) return cloudError(res, error); return send(res, 400, { ok: false, message: error.message }) }
     }

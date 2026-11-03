@@ -114,24 +114,40 @@
     try { payload = await response.json() } catch {}
     if (!response.ok || !payload || payload.ok !== true) {
       const message = payload && payload.message || (response.status === 401 ? '网页后台登录已过期，请重新登录' : `云端请求失败（${response.status}）`)
-      throw new Error(message)
+      const error = new Error(message)
+      error.status = response.status
+      throw error
     }
     return payload
   }
 
+  // The review page polls continuously, so the health/session probe is cached
+  // briefly. A 401 still surfaces immediately because request() throws it.
+  let connectionCache = { at: 0, ok: false }
   async function checkConnection(fetcher, apiUrl) {
+    const cacheKey = `${String(apiUrl || '')}`
+    const now = Date.now()
+    if (connectionCache.ok && connectionCache.key === cacheKey && now - connectionCache.at < 30000) return
     const health = await request(fetcher, apiUrl, '/api/health')
     if (health.cloudEnabled !== true || health.cloudDatabaseConnected !== true) {
       throw new Error(`赛事云端数据库未连接（${health.cloudDatabaseDiagnostic || '未知状态'}）`)
     }
     await request(fetcher, apiUrl, '/api/session')
+    connectionCache = { at: Date.now(), ok: true, key: cacheKey }
   }
 
   async function loadRows({ fetcher, apiUrl, eventId }) {
+    return loadStages({ fetcher, apiUrl, eventId, stages: Array.from({ length: 20 }, (_, index) => `SS${index + 1}`) })
+  }
+
+  async function loadStages({ fetcher, apiUrl, eventId, stages: requested }) {
     const id = String(eventId || '').trim()
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) throw new Error('当前赛事 ID 无效，已停止读取云端成绩')
+    const stages = (Array.isArray(requested) && requested.length ? requested : Array.from({ length: 20 }, (_, index) => `SS${index + 1}`))
+      .map(value => String(value || '').trim().toUpperCase())
+      .filter(value => /^SS(?:[1-9]|1\d|20)$/.test(value))
+    if (!stages.length) throw new Error('没有需要读取的赛段')
     await checkConnection(fetcher, apiUrl)
-    const stages = Array.from({ length: 20 }, (_, index) => `SS${index + 1}`)
     const responses = []
     for (let offset = 0; offset < stages.length; offset += 4) {
       const batch = await Promise.all(stages.slice(offset, offset + 4).map(async stage => {
@@ -200,5 +216,5 @@
     })
   }
 
-  return { canonicalCarNumber, parseDuration, formatDuration, durationFromClocks, stageDurationSeconds, fromCloudRow, toCloudRow, checkConnection, loadRows, loadRevisions, saveStage, publish }
+  return { canonicalCarNumber, parseDuration, formatDuration, durationFromClocks, stageDurationSeconds, fromCloudRow, toCloudRow, checkConnection, loadRows, loadStages, loadRevisions, saveStage, publish }
 })
