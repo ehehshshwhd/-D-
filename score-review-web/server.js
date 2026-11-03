@@ -413,6 +413,25 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true, ...permissions })
       } catch (error) { return send(res, 400, { ok: false, message: error.message || '权限删除失败' }) }
     }
+    if (url.pathname === '/api/work-records/revisions' && req.method === 'GET') {
+      const rawEventId = url.searchParams.get('eventId')
+      if (!isValidEventId(rawEventId)) return send(res, 400, { ok: false, message: '赛事 ID 无效' })
+      const eventId = validateEventId(rawEventId)
+      try {
+        if (cloudStore.enabled) return send(res, 200, { ok: true, ...(await cloudStore.listStageRevisions(eventId)) })
+        const data = readData(), stages = {}
+        for (const stage of Array.from({ length: 20 }, (_, index) => `SS${index + 1}`)) {
+          const record = data[key(eventId, stage)]
+          if (!record) continue
+          stages[stage] = {
+            revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0,
+            count: Array.isArray(record.rows) ? record.rows.length : 0,
+            updatedAt: record.updatedAt || null
+          }
+        }
+        return send(res, 200, { ok: true, eventId, stages })
+      } catch (error) { return cloudError(res, error) }
+    }
     if (url.pathname === '/api/work-records' && req.method === 'GET') {
       const rawEventId = url.searchParams.get('eventId'); const stage = String(url.searchParams.get('stage') || '').toUpperCase()
       if (!isValidEventId(rawEventId)) return send(res, 400, { ok: false, message: '赛事 ID 无效' })

@@ -1104,6 +1104,29 @@ async function get(eventId, stage) {
   }
 }
 
+// Lightweight revision probe for the score review page so it can poll for
+// uploads from the mini program without reading every stage's rows: one
+// equality query returns the revision of every stage of an event.
+async function listStageRevisions(eventId) {
+  const id = validateEventId(eventId)
+  const db = getDatabase()
+  await ensureCollection(db)
+  const result = await db.collection('work_records').where({ eventId: id }).limit(STAGES.size + 1).get()
+  const records = Array.isArray(result.data) ? result.data : []
+  if (records.length > STAGES.size) throw new Error(`云端赛事 ${id} 存在重复或异常赛段记录，未读取成绩版本`)
+  const stages = {}
+  for (const record of records) {
+    const stage = String(record && record.stage || '').toUpperCase()
+    if (!STAGES.has(stage)) continue
+    stages[stage] = {
+      revision: Number.isSafeInteger(Number(record.revision)) && Number(record.revision) >= 0 ? Number(record.revision) : 0,
+      count: Array.isArray(record.rows) ? record.rows.length : 0,
+      updatedAt: record.updatedAt || null
+    }
+  }
+  return { eventId: id, stages }
+}
+
 // Return one entry for every configured stage so the web "上传批次" view can
 // show what has actually reached CloudBase.  Empty stages are included on
 // purpose: an empty stage is still a usable batch that may be waiting for an

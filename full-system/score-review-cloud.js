@@ -166,6 +166,20 @@
     return { rows, revisions }
   }
 
+  async function loadRevisions({ fetcher, apiUrl, eventId }) {
+    const id = String(eventId || '').trim()
+    if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) throw new Error('当前赛事 ID 无效，已停止检查云端成绩')
+    const payload = await request(fetcher, apiUrl, `/api/work-records/revisions?eventId=${encodeURIComponent(id)}`)
+    const stages = payload.stages && typeof payload.stages === 'object' ? payload.stages : {}
+    const revisions = {}
+    for (const [stage, item] of Object.entries(stages)) {
+      const revision = Number(item && item.revision)
+      if (!Number.isSafeInteger(revision) || revision < 0) continue
+      revisions[String(stage).toUpperCase()] = revision
+    }
+    return { revisions, counts: Object.fromEntries(Object.entries(stages).map(([stage, item]) => [String(stage).toUpperCase(), Number(item && item.count) || 0])) }
+  }
+
   async function saveStage({ fetcher, apiUrl, eventId, stage, rows, expectedRevision }) {
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new Error(`${stage} 云端版本号无效，请刷新后重试`)
     if (!Array.isArray(rows) || rows.length > 1000) throw new Error(`${stage} 每个赛段最多保存 1000 条成绩`)
@@ -186,5 +200,5 @@
     })
   }
 
-  return { canonicalCarNumber, parseDuration, formatDuration, durationFromClocks, stageDurationSeconds, fromCloudRow, toCloudRow, checkConnection, loadRows, saveStage, publish }
+  return { canonicalCarNumber, parseDuration, formatDuration, durationFromClocks, stageDurationSeconds, fromCloudRow, toCloudRow, checkConnection, loadRows, loadRevisions, saveStage, publish }
 })
